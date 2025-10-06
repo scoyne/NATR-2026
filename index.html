@@ -415,7 +415,7 @@
                 <div class="item-header" onclick="toggleItem('eventTickets')">
                     <input type="checkbox" class="checkbox-custom" id="eventTicketsCheck" onchange="handleEventTicketsToggle()">
                     <div class="item-title">
-                        <div class="item-name">Event Tickets</div>
+                        <div class="item-name">🎟️ Event Tickets</div>
                         <div class="item-price">$25 per person</div>
                     </div>
                     <span class="inventory-badge" id="ticketInventory">465 available</span>
@@ -460,7 +460,7 @@
                 <div class="item-header" onclick="toggleItem('horses')">
                     <input type="checkbox" class="checkbox-custom" id="horsesCheck" onchange="handleHorsesToggle()">
                     <div class="item-title">
-                        <div class="item-name">Sponsor a Horse</div>
+                        <div class="item-name">🏇 Sponsor a Horse</div>
                         <div class="item-price">$25 per horse</div>
                     </div>
                     <span class="inventory-badge" id="horseInventory">78 available</span>
@@ -498,7 +498,7 @@
                 <div class="item-header" onclick="toggleItem('programAds')">
                     <input type="checkbox" class="checkbox-custom" id="programAdsCheck" onchange="handleProgramAdsToggle()">
                     <div class="item-title">
-                        <div class="item-name">Program Book Ads</div>
+                        <div class="item-name">📖 Program Book Ads</div>
                         <div class="item-price">Starting at $25</div>
                     </div>
                     <span class="inventory-badge" id="programAdInventory">Available</span>
@@ -519,9 +519,150 @@
                 </div>
             </div>
 
-            <!-- Placeholder for future items -->
-            <div style="text-align: center; padding: 20px; opacity: 0.5;">
-                <p>🎫 Raffle Tickets, 🧺 Donations - Coming in next phase</p>
+            <!-- Raffle Tickets -->
+            <div class="purchase-item" id="raffleTicketsItem">
+                <div class="item-header" onclick="toggleItem('raffleTickets')">
+                    <input type="checkbox" class="checkbox-custom" id="raffleTicketsCheck" onchange="handleRaffleTicketsToggle()">
+                    <div class="item-title">
+                        <div class="item-name">🎫 Raffle Tickets</div>
+                        <div class="item-price">$5 each or 5 for $20</div>
+                    </div>
+                    <span class="inventory-badge" style="background: rgba(139, 195, 74, 0.2); border-color: #8bc34a; color: #8bc34a;">Available</span>
+                </div>
+
+                <div class="conditional-fields" id="raffleTicketsFields">
+                    <div class="info-box" style="margin-bottom: 20px;">
+                        <p>🎫 <strong>Cash Raffle Prizes:</strong> 1st Prize $1,000 | 2nd Prize $300 | 3rd Prize $200<br>
+                        Plus 50/50 Raffle and Basket Raffles! Unique 6-digit ticket numbers generated after payment.</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Purchase Option<span class="required">*</span></label>
+                        <select class="form-select" id="raffleTicketOption" onchange="handleRaffleTicketOptionChange()">
+                            <option value="">Select option</option>
+                            <option value="individual">Individual Tickets ($5 each)</option>
+                            <option value="books">Books of 5 Tickets ($20 per book)</option>
+                        </select>
+                    </div>
+
+                    <!-- Individual Tickets -->
+                    <div id="individualTicketsSection" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label">Number of Individual Tickets<span class="required">*</span></label>
+                            <select class="form-select" id="individualTicketQty" onchange="handleIndividualTicketQtyChange()">
+                                <option value="">Select quantity</option>
+                                <option value="1">1 ticket - $5</option>
+                                <option value="2">2 tickets - $10</option>
+                                <option value="3">3 tickets - $15</option>
+                                <option value="4">4 tickets - $20</option>
+                                <option value="5">5 tickets - $25</option>
+                                <option value="10">10 tickets - $50</option>
+                                <option value="15">15 tickets - $75</option>
+                                <option value="20">20 tickets - $100</option>
+                                <option value="25">25 tickets - $125</option>
+                            </select>
+                        </div>
+
+                        <div id="individualTicketNamesSection"></div>
+                    </div>
+
+                    <!-- Books of Tickets -->
+                    <div id="booksTicketsSection" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label">Number of Books (5 tickets each)<span class="required">*</span></label>
+                            <select class="form-select" id="bookTicketQty" onchange="handleBookTicketQtyChange()">
+                                <option value="">Select quantity</option>
+                                <option value="1">1 book (5 tickets) - $20</option>
+                                <option value="2">2 books (10 tickets) - $40</option>
+                                <option value="3">3 books (15 tickets) - $60</option>
+                                <option value="4">4 books (20 tickets) - $80</option>
+                                <option value="5">5 books (25 tickets) - $100</option>
+                                <option value="10">10 books (50 tickets) - $200</option>
+                            </select>
+                        </div>
+
+                        <div id="bookTicketNamesSection"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Basket Donations -->
+            <div class="purchase-item" id="basketDonationItem">
+                <div class="item-header" onclick="toggleItem('basketDonation')">
+                    <input type="checkbox" class="checkbox-custom" id="basketDonationCheck" onchange="handleBasketDonationToggle()">
+                    <div class="item-title">
+                        <div class="item-name">🧺 Basket Raffle Donation</div>
+                        <div class="item-price">Tax-deductible donation</div>
+                    </div>
+                    <span class="inventory-badge" style="background: rgba(139, 195, 74, 0.2); border-color: #8bc34a; color: #8bc34a;">Accepting</span>
+                </div>
+
+                <div class="conditional-fields" id="basketDonationFields">
+                    <div class="info-box" style="margin-bottom: 20px;">
+                        <p>🧺 <strong>Donate a Themed Gift Basket:</strong> Help make our raffle amazing! Suggested themes: Irish, Wine & Cheese, Coffee, Spa, Sports, Kids Activities. All donations are tax-deductible and acknowledged in our program book.</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Donation Type<span class="required">*</span></label>
+                        <select class="form-select" id="donationType" onchange="handleDonationTypeChange()">
+                            <option value="">Select type</option>
+                            <option value="basket">Gift Basket (Physical)</option>
+                            <option value="cash">Cash Donation</option>
+                        </select>
+                    </div>
+
+                    <!-- Basket Donation -->
+                    <div id="basketDonationSection" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label">Basket Theme/Description<span class="required">*</span></label>
+                            <textarea class="form-input" id="basketTheme" rows="3" placeholder="Describe your basket theme and contents (e.g., 'Irish Whiskey Tasting Basket with Jameson, Tullamore Dew, tasting glasses, and Irish chocolates')"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Estimated Value<span class="required">*</span></label>
+                            <select class="form-select" id="basketValue">
+                                <option value="">Select value range</option>
+                                <option value="25-50">$25 - $50</option>
+                                <option value="51-100">$51 - $100</option>
+                                <option value="101-150">$101 - $150</option>
+                                <option value="151-200">$151 - $200</option>
+                                <option value="201+">$201+</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">How would you like to be recognized?</label>
+                            <input type="text" class="form-input" id="basketRecognition" placeholder="e.g., 'Donated by the Murphy Family' (optional)">
+                        </div>
+                    </div>
+
+                    <!-- Cash Donation -->
+                    <div id="cashDonationSection" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label">Donation Amount<span class="required">*</span></label>
+                            <div style="position: relative;">
+                                <span style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 18px; color: #8bc34a;">$</span>
+                                <input type="number" class="form-input" id="cashDonationAmount" placeholder="0.00" min="1" step="0.01" style="padding-left: 35px;" onchange="handleCashDonationChange()">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Donation Purpose (Optional)</label>
+                            <select class="form-select" id="donationPurpose">
+                                <option value="general">General Support</option>
+                                <option value="costumes">Team Costumes</option>
+                                <option value="competitions">Competition Fees</option>
+                                <option value="workshops">Camps & Workshops</option>
+                                <option value="mini-feis">Mini Feis (My Feis)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">How would you like to be recognized?</label>
+                            <input type="text" class="form-input" id="cashRecognition" placeholder="e.g., 'In memory of...' or 'Anonymous' (optional)">
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -574,7 +715,9 @@
         let cart = {
             eventTickets: null,
             horses: null,
-            programAds: [] // Changed to array to support multiple ads
+            programAds: [],
+            raffleTickets: null,
+            donation: null
         };
 
         // Update inventory display
@@ -615,6 +758,10 @@
                 handleHorsesToggle();
             } else if (itemType === 'programAds') {
                 handleProgramAdsToggle();
+            } else if (itemType === 'raffleTickets') {
+                handleRaffleTicketsToggle();
+            } else if (itemType === 'basketDonation') {
+                handleBasketDonationToggle();
             }
         }
 
@@ -976,6 +1123,191 @@
             updateCart(); // Add this to trigger cart update
         }
 
+        // RAFFLE TICKETS HANDLERS
+        function handleRaffleTicketsToggle() {
+            const checkbox = document.getElementById('raffleTicketsCheck');
+            const fields = document.getElementById('raffleTicketsFields');
+            
+            if (checkbox.checked) {
+                fields.classList.add('visible');
+            } else {
+                fields.classList.remove('visible');
+                // Reset
+                document.getElementById('raffleTicketOption').value = '';
+                document.getElementById('individualTicketsSection').style.display = 'none';
+                document.getElementById('booksTicketsSection').style.display = 'none';
+                cart.raffleTickets = null;
+                updateCart();
+            }
+        }
+
+        function handleRaffleTicketOptionChange() {
+            const option = document.getElementById('raffleTicketOption').value;
+            const individualSection = document.getElementById('individualTicketsSection');
+            const booksSection = document.getElementById('booksTicketsSection');
+            
+            if (option === 'individual') {
+                individualSection.style.display = 'block';
+                booksSection.style.display = 'none';
+            } else if (option === 'books') {
+                individualSection.style.display = 'none';
+                booksSection.style.display = 'block';
+            } else {
+                individualSection.style.display = 'none';
+                booksSection.style.display = 'none';
+            }
+            
+            cart.raffleTickets = null;
+            updateCart();
+        }
+
+        function handleIndividualTicketQtyChange() {
+            const qty = parseInt(document.getElementById('individualTicketQty').value) || 0;
+            const section = document.getElementById('individualTicketNamesSection');
+            
+            if (qty === 0) {
+                section.innerHTML = '';
+                cart.raffleTickets = null;
+                updateCart();
+                return;
+            }
+
+            // Generate fields for each ticket
+            let html = '<div class="info-box" style="margin: 20px 0;"><p><strong>Enter owner info for each ticket:</strong> You can use the same name for all tickets or different names.</p></div>';
+            
+            for (let i = 1; i <= qty; i++) {
+                html += `
+                    <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(139, 195, 74, 0.2); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
+                        <h5 style="color: #8bc34a; margin-bottom: 10px; font-size: 14px;">Ticket #${i}</h5>
+                        <div class="form-group" style="margin-bottom: 10px;">
+                            <label class="form-label" style="font-size: 12px;">Owner Name<span class="required">*</span></label>
+                            <input type="text" class="form-input" id="raffleTicketName${i}" placeholder="Name for ticket ${i}">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" style="font-size: 12px;">Contact (Phone or Email)<span class="required">*</span></label>
+                            <input type="text" class="form-input" id="raffleTicketContact${i}" placeholder="Phone or email">
+                        </div>
+                    </div>
+                `;
+            }
+
+            section.innerHTML = html;
+
+            // Update cart
+            cart.raffleTickets = {
+                type: 'individual',
+                quantity: qty,
+                price: 5,
+                total: qty * 5,
+                tickets: []
+            };
+
+            updateCart();
+        }
+
+        function handleBookTicketQtyChange() {
+            const bookQty = parseInt(document.getElementById('bookTicketQty').value) || 0;
+            const section = document.getElementById('bookTicketNamesSection');
+            
+            if (bookQty === 0) {
+                section.innerHTML = '';
+                cart.raffleTickets = null;
+                updateCart();
+                return;
+            }
+
+            const totalTickets = bookQty * 5;
+
+            // Generate fields for each book
+            let html = '<div class="info-box" style="margin: 20px 0;"><p><strong>Enter owner info:</strong> All 5 tickets in each book will use the same name and contact info.</p></div>';
+            
+            for (let i = 1; i <= bookQty; i++) {
+                html += `
+                    <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(139, 195, 74, 0.2); border-radius: 10px; padding: 15px; margin-bottom: 15px;">
+                        <h5 style="color: #8bc34a; margin-bottom: 10px; font-size: 14px;">📚 Book #${i} (5 tickets)</h5>
+                        <div class="form-group" style="margin-bottom: 10px;">
+                            <label class="form-label" style="font-size: 12px;">Owner Name<span class="required">*</span></label>
+                            <input type="text" class="form-input" id="bookTicketName${i}" placeholder="Name for all 5 tickets in this book">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" style="font-size: 12px;">Contact (Phone or Email)<span class="required">*</span></label>
+                            <input type="text" class="form-input" id="bookTicketContact${i}" placeholder="Phone or email">
+                        </div>
+                    </div>
+                `;
+            }
+
+            section.innerHTML = html;
+
+            // Update cart
+            cart.raffleTickets = {
+                type: 'books',
+                bookQuantity: bookQty,
+                ticketQuantity: totalTickets,
+                price: 20,
+                total: bookQty * 20,
+                books: []
+            };
+
+            updateCart();
+        }
+
+        // DONATION HANDLERS
+        function handleBasketDonationToggle() {
+            const checkbox = document.getElementById('basketDonationCheck');
+            const fields = document.getElementById('basketDonationFields');
+            
+            if (checkbox.checked) {
+                fields.classList.add('visible');
+            } else {
+                fields.classList.remove('visible');
+                // Reset
+                document.getElementById('donationType').value = '';
+                document.getElementById('basketDonationSection').style.display = 'none';
+                document.getElementById('cashDonationSection').style.display = 'none';
+                cart.donation = null;
+                updateCart();
+            }
+        }
+
+        function handleDonationTypeChange() {
+            const type = document.getElementById('donationType').value;
+            const basketSection = document.getElementById('basketDonationSection');
+            const cashSection = document.getElementById('cashDonationSection');
+            
+            if (type === 'basket') {
+                basketSection.style.display = 'block';
+                cashSection.style.display = 'none';
+                cart.donation = {
+                    type: 'basket',
+                    amount: 0
+                };
+            } else if (type === 'cash') {
+                basketSection.style.display = 'none';
+                cashSection.style.display = 'block';
+                cart.donation = {
+                    type: 'cash',
+                    amount: 0
+                };
+            } else {
+                basketSection.style.display = 'none';
+                cashSection.style.display = 'none';
+                cart.donation = null;
+            }
+            
+            updateCart();
+        }
+
+        function handleCashDonationChange() {
+            const amount = parseFloat(document.getElementById('cashDonationAmount').value) || 0;
+            
+            if (cart.donation && cart.donation.type === 'cash') {
+                cart.donation.amount = amount;
+            }
+            
+            updateCart();
+        }
+
         // Update business name in cart
         function updateProgramAdBusinessName(adNumber) {
             const businessName = document.getElementById(`programAdBusinessName${adNumber}`).value;
@@ -1159,6 +1491,48 @@
                 }
             }
 
+            // Validate raffle tickets
+            if (cart.raffleTickets) {
+                if (cart.raffleTickets.type === 'individual') {
+                    const qty = cart.raffleTickets.quantity;
+                    for (let i = 1; i <= qty; i++) {
+                        const name = document.getElementById(`raffleTicketName${i}`).value.trim();
+                        const contact = document.getElementById(`raffleTicketContact${i}`).value.trim();
+                        if (!name || !contact) {
+                            alert(`Please fill in owner name and contact for Raffle Ticket #${i}.`);
+                            return;
+                        }
+                    }
+                } else if (cart.raffleTickets.type === 'books') {
+                    const bookQty = cart.raffleTickets.bookQuantity;
+                    for (let i = 1; i <= bookQty; i++) {
+                        const name = document.getElementById(`bookTicketName${i}`).value.trim();
+                        const contact = document.getElementById(`bookTicketContact${i}`).value.trim();
+                        if (!name || !contact) {
+                            alert(`Please fill in owner name and contact for Book #${i}.`);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // Validate donations
+            if (cart.donation) {
+                if (cart.donation.type === 'basket') {
+                    const theme = document.getElementById('basketTheme').value.trim();
+                    const value = document.getElementById('basketValue').value;
+                    if (!theme || !value) {
+                        alert('Please fill in the basket theme and estimated value.');
+                        return;
+                    }
+                } else if (cart.donation.type === 'cash') {
+                    if (!cart.donation.amount || cart.donation.amount <= 0) {
+                        alert('Please enter a donation amount greater than $0.');
+                        return;
+                    }
+                }
+            }
+
             // In real app, this would proceed to Stripe payment
             const purchaseData = {
                 purchaser: {
@@ -1171,7 +1545,7 @@
                 cart: cart
             };
             
-            alert('Phase 2 - Program Ads Complete! ✅\n\nMultiple ads working!\n\nThis would now proceed to Stripe payment.\n\nPurchase Data:\n' + JSON.stringify(purchaseData, null, 2));
+            alert('Phase 2 Complete! ✅\n\nAll items working:\n✅ Event Tickets\n✅ Horses\n✅ Program Ads (multiple)\n✅ Raffle Tickets\n✅ Donations\n\nReady for Stripe integration!\n\nPurchase Data:\n' + JSON.stringify(purchaseData, null, 2));
         });
 
         // Initialize
