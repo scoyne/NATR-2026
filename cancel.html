@@ -1,1 +1,66 @@
-<!-- CANCEL PAGE -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Canceled - NATR</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0a0e1a 0%, #1a2f1a 50%, #0a0e1a 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .cancel-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 2px solid #ff9800;
+            border-radius: 20px;
+            padding: 50px;
+            text-align: center;
+            max-width: 600px;
+        }
+        .cancel-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 36px;
+            color: #ff9800;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 18px;
+            line-height: 1.6;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+        .btn {
+            background: linear-gradient(135deg, #8bc34a, #689f38);
+            color: #000;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-block;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="cancel-card">
+        <div class="cancel-icon">❌</div>
+        <h1>Payment Canceled</h1>
+        <p>Your payment was canceled. No charges were made.</p>
+        <p>If you have questions, please contact us!</p>
+        <a href="/" class="btn">Return to Purchase Form</a>
+    </div>
+</body>
+</html>
