@@ -428,7 +428,7 @@
             <button class="btn btn-primary" id="checkoutBtn" disabled>Proceed to Checkout</button>
         </div>
     </div>
-
+<!-- hiding existing script
     <script>
         // --- JAVASCRIPT LOGIC ---
         
@@ -1148,6 +1148,767 @@
                 alert('Validation Passed! Ready to submit to Stripe backend. Total: ' + purchaserInfo.total.toFixed(2));
                 // startStripeCheckout(finalData); // This function will be implemented in Phase 3
                 // --- END PHASE 3 ---
+            }
+        });
+
+        // Initial update
+        updateCart(); 
+        
+    </script>
+    -->
+    <script>
+        // --- JAVASCRIPT LOGIC ---
+        
+        let cart = {
+            eventTickets: null,
+            horses: { quantity: 0, totalPrice: 0, entries: [] },
+            programAds: [],
+            raffleTickets: null,
+            donation: null,
+            cashDonation: null
+        };
+
+        const PRICES = {
+            TICKET: 25,
+            HORSE: 25,
+            RAFFLE_INDIVIDUAL: 5,
+            RAFFLE_BOOK: 20,
+            AD_BUSINESS_CARD: 25,
+            AD_QUARTER: 25,
+            AD_HALF: 50,
+            AD_FULL: 100,
+            AD_FULL_SPONSORED: 120,
+            FEE_PERCENT: 0.029,
+            FEE_FLAT: 0.30
+        };
+
+        const DOM = {
+            // Purchaser Info
+            firstName: document.getElementById('firstName'),
+            lastName: document.getElementById('lastName'),
+            email: document.getElementById('email'),
+            phone: document.getElementById('phone'),
+            dancerFamily: document.getElementById('dancerFamily'),
+
+            // Tickets
+            eventTicketsCheck: document.getElementById('eventTicketsCheck'),
+            eventTicketsFields: document.getElementById('eventTicketsFields'),
+            ticketQuantity: document.getElementById('ticketQuantity'),
+            tableReservationField: document.getElementById('tableReservationField'),
+            tableName: document.getElementById('tableName'),
+
+            // Horses
+            horseSponsorshipCheck: document.getElementById('horseSponsorshipCheck'),
+            horseSponsorshipFields: document.getElementById('horseSponsorshipFields'),
+            horseQuantity: document.getElementById('horseQuantity'),
+            horseEntriesContainer: document.getElementById('horseEntriesContainer'),
+
+            // Program Ads
+            programAdCheck: document.getElementById('programAdCheck'),
+            programAdFields: document.getElementById('programAdFields'),
+            adsContainer: document.getElementById('adsContainer'),
+            addAdBtn: document.getElementById('addAdBtn'),
+
+            // Raffle Tickets
+            raffleTicketsCheck: document.getElementById('raffleTicketsCheck'),
+            raffleTicketsFields: document.getElementById('raffleTicketsFields'),
+            raffleType: document.getElementById('raffleType'),
+            raffleQuantityIndividual: document.getElementById('raffleQuantityIndividual'),
+            raffleQuantityBook: document.getElementById('raffleQuantityBook'),
+            raffleIndividualOptions: document.getElementById('raffleIndividualOptions'),
+            raffleBookOptions: document.getElementById('raffleBookOptions'),
+            raffleEntriesContainer: document.getElementById('raffleEntriesContainer'),
+
+            // Donations
+            basketDonationCheck: document.getElementById('basketDonationCheck'),
+            basketDonationFields: document.getElementById('basketDonationFields'),
+            donationType: document.getElementById('donationType'),
+            giftBasketFields: document.getElementById('giftBasketFields'),
+            cashDonationFields: document.getElementById('cashDonationFields'),
+            basketDescription: document.getElementById('basketDescription'),
+            basketValue: document.getElementById('basketValue'),
+            cashDonationAmount: document.getElementById('cashDonationAmount'),
+            cashPurpose: document.getElementById('cashPurpose'),
+            recognitionName: document.getElementById('recognitionName'),
+
+            // Cart
+            cartItems: document.getElementById('cartItems'),
+            cartTotals: document.getElementById('cartTotals'),
+            subtotalDisplay: document.getElementById('subtotal'),
+            coverFeesCheckbox: document.getElementById('coverFeesCheckbox'),
+            feeAmountDisplay: document.getElementById('feeAmount'),
+            totalDisplay: document.getElementById('total'),
+            checkoutBtn: document.getElementById('checkoutBtn')
+        };
+
+
+        // --- CORE FUNCTIONS ---
+
+        function updateCart() {
+            let html = '', subtotal = 0;
+            const itemCounts = { paid: 0, donated: 0 };
+
+            // 1. Event Tickets
+            if (cart.eventTickets && cart.eventTickets.quantity > 0) {
+                subtotal += cart.eventTickets.total;
+                itemCounts.paid++;
+                html += `<div class="cart-item"><div><div class="cart-item-name">🎟️ Event Tickets</div><div class="cart-item-qty">${cart.eventTickets.quantity} × $${PRICES.TICKET}</div></div><div class="cart-item-price">$${cart.eventTickets.total.toFixed(2)}</div></div>`;
+            }
+
+            // 2. Horse Sponsorships
+            if (cart.horses.quantity > 0) {
+                subtotal += cart.horses.totalPrice;
+                itemCounts.paid++;
+                html += `<div class="cart-item"><div><div class="cart-item-name">🏇 Horse Sponsorships</div><div class="cart-item-qty">${cart.horses.quantity} Horse(s)</div></div><div class="cart-item-price">$${cart.horses.totalPrice.toFixed(2)}</div></div>`;
+            }
+            
+            // 3. Program Ads
+            cart.programAds.forEach((ad, index) => {
+                if (ad.price > 0) {
+                    subtotal += ad.price;
+                    itemCounts.paid++;
+                    html += `<div class="cart-item"><div><div class="cart-item-name">📖 Program Ad #${index + 1}</div><div class="cart-item-qty">${ad.sizeLabel}</div></div><div class="cart-item-price">$${ad.price.toFixed(2)}</div></div>`;
+                }
+            });
+
+            // 4. Raffle Tickets
+            if (cart.raffleTickets && cart.raffleTickets.totalPrice > 0) {
+                subtotal += cart.raffleTickets.totalPrice;
+                itemCounts.paid++;
+                const qtyText = cart.raffleTickets.type === 'book' ? `${cart.raffleTickets.books} Book(s) (${cart.raffleTickets.totalQuantity} Tix)` : `${cart.raffleTickets.totalQuantity} Individual Tix`;
+                html += `<div class="cart-item"><div><div class="cart-item-name">🎫 Raffle Tickets</div><div class="cart-item-qty">${qtyText}</div></div><div class="cart-item-price">$${cart.raffleTickets.totalPrice.toFixed(2)}</div></div>`;
+            }
+
+            // 5. Cash Donation
+            if (cart.cashDonation && cart.cashDonation.amount > 0) {
+                subtotal += cart.cashDonation.amount;
+                itemCounts.paid++;
+                html += `<div class="cart-item"><div><div class="cart-item-name">💵 Cash Donation</div><div class="cart-item-qty">${cart.cashDonation.purpose || 'General Fund'}</div></div><div class="cart-item-price">$${cart.cashDonation.amount.toFixed(2)}</div></div>`;
+            }
+
+            // 6. Gift Basket Donation (No charge, but shows up)
+            if (cart.donation && cart.donation.type === 'basket') {
+                itemCounts.donated++;
+                html += `<div class="cart-item"><div><div class="cart-item-name">🧺 Gift Basket Donation</div><div class="cart-item-qty">Value: ${cart.donation.valueLabel}</div></div><div class="cart-item-price">Thank you!</div></div>`;
+            }
+
+            // Update Cart UI
+            DOM.cartItems.innerHTML = html || '<div class="cart-empty">Cart is empty</div>';
+            DOM.cartTotals.style.display = (itemCounts.paid > 0 || itemCounts.donated > 0) ? 'block' : 'none';
+            DOM.subtotalDisplay.textContent = `$${subtotal.toFixed(2)}`;
+            DOM.checkoutBtn.disabled = itemCounts.paid === 0; // Disable if only basket donation
+            updateTotal(subtotal);
+
+            // Hide/Show Fee option if there is no subtotal
+            DOM.coverFeesCheckbox.closest('div').style.display = subtotal > 0 ? 'block' : 'none';
+
+            // Re-render conditional Horse/Ad fields which rely on cart data
+            updateHorseFields(); 
+            updateRaffleFields();
+        }
+
+        function updateTotal(subtotal) {
+            const coverFees = DOM.coverFeesCheckbox.checked;
+            let fee = 0, total = subtotal;
+
+            if (coverFees && subtotal > 0) {
+                fee = (subtotal * PRICES.FEE_PERCENT) + PRICES.FEE_FLAT;
+                total = subtotal + fee;
+                DOM.feeAmountDisplay.textContent = `Fee: $${fee.toFixed(2)}`;
+                DOM.feeAmountDisplay.style.display = 'block';
+            } else {
+                DOM.feeAmountDisplay.style.display = 'none';
+            }
+
+            DOM.totalDisplay.textContent = `$${total.toFixed(2)}`;
+        }
+
+
+        // --- VALIDATION LOGIC ---
+
+        function validateEmail(email) {
+            const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+            return re.test(String(email).toLowerCase());
+        }
+
+        function validateForm() {
+            let isValid = true;
+            let firstErrorElement = null;
+
+            // Simple required fields (Name, Email, Phone, Family)
+            const requiredFields = [DOM.firstName, DOM.lastName, DOM.email, DOM.phone, DOM.dancerFamily];
+            requiredFields.forEach(field => {
+                if (field.value.trim() === '' || (field.type === 'email' && !validateEmail(field.value))) {
+                    field.style.borderColor = '#ff5722';
+                    if (!firstErrorElement) firstErrorElement = field;
+                    isValid = false;
+                } else {
+                    field.style.borderColor = '';
+                }
+            });
+
+            // Conditional validation
+            
+            // Event Tickets: Table name check
+            if (cart.eventTickets && cart.eventTickets.quantity >= 8 && DOM.tableName.value.trim() === '') {
+                DOM.tableName.style.borderColor = '#ff5722';
+                if (!firstErrorElement) firstErrorElement = DOM.tableName;
+                isValid = false;
+            } else if (DOM.tableName) {
+                 DOM.tableName.style.borderColor = '';
+            }
+
+            // Horse Sponsorships: Horse names/owners check
+            if (cart.horses.quantity > 0) {
+                cart.horses.entries.forEach((entry, index) => {
+                    const horseNameField = document.getElementById(`horse-name-${index}`);
+                    const ownerNameField = document.getElementById(`owner-name-${index}`);
+                    
+                    if (horseNameField.value.trim() === '' || ownerNameField.value.trim() === '') {
+                        if (horseNameField.value.trim() === '') horseNameField.style.borderColor = '#ff5722'; else horseNameField.style.borderColor = '';
+                        if (ownerNameField.value.trim() === '') ownerNameField.style.borderColor = '#ff5722'; else ownerNameField.style.borderColor = '';
+                        if (!firstErrorElement) firstErrorElement = horseNameField || ownerNameField;
+                        isValid = false;
+                    } else {
+                        horseNameField.style.borderColor = '';
+                        ownerNameField.style.borderColor = '';
+                    }
+                });
+            }
+
+            // Program Ads: Logic check
+            if (cart.programAds.length > 0) {
+                 cart.programAds.forEach((ad, index) => {
+                    const adContainer = document.getElementById(`ad-container-${index}`);
+                    const adSize = adContainer.querySelector('.ad-size-select');
+                    const adBusinessName = adContainer.querySelector('.ad-business-name');
+                    const adDesignOption = adContainer.querySelector('.ad-design-option');
+                    
+                    if (adSize.value === '' || adBusinessName.value.trim() === '' || adDesignOption.value === '') {
+                        adSize.style.borderColor = adSize.value === '' ? '#ff5722' : '';
+                        adBusinessName.style.borderColor = adBusinessName.value.trim() === '' ? '#ff5722' : '';
+                        adDesignOption.style.borderColor = adDesignOption.value === '' ? '#ff5722' : '';
+                        if (!firstErrorElement) firstErrorElement = adSize || adBusinessName || adDesignOption;
+                        isValid = false;
+                    } else {
+                        adSize.style.borderColor = '';
+                        adBusinessName.style.borderColor = '';
+                        adDesignOption.style.borderColor = '';
+                    }
+                });
+            }
+
+            // Cash Donation Check
+            if (DOM.donationType.value === 'cash' && (parseFloat(DOM.cashDonationAmount.value) || 0) <= 0) {
+                 DOM.cashDonationAmount.style.borderColor = '#ff5722';
+                 if (!firstErrorElement) firstErrorElement = DOM.cashDonationAmount;
+                 isValid = false;
+            } else if (DOM.cashDonationAmount) {
+                 DOM.cashDonationAmount.style.borderColor = '';
+            }
+            
+            // Raffle Tickets check (complex: needs name/contact for every ticket/book)
+            if (cart.raffleTickets && cart.raffleTickets.entries.length > 0) {
+                cart.raffleTickets.entries.forEach((entry, index) => {
+                    const ownerNameField = document.getElementById(`raffle-name-${index}`);
+                    const contactField = document.getElementById(`raffle-contact-${index}`);
+                    
+                    if (ownerNameField.value.trim() === '' || contactField.value.trim() === '') {
+                        if (ownerNameField.value.trim() === '') ownerNameField.style.borderColor = '#ff5722'; else ownerNameField.style.borderColor = '';
+                        if (contactField.value.trim() === '') contactField.style.borderColor = '#ff5722'; else contactField.style.borderColor = '';
+                        if (!firstErrorElement) firstErrorElement = ownerNameField || contactField;
+                        isValid = false;
+                    } else {
+                        ownerNameField.style.borderColor = '';
+                        contactField.style.borderColor = '';
+                    }
+                });
+            }
+
+            if (!isValid && firstErrorElement) {
+                firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                alert('Please correct the highlighted fields before proceeding.');
+            }
+
+            return isValid;
+        }
+
+
+        // --- HORSE LOGIC ---
+
+        function generateHorseEntryHTML(index) {
+            return `
+                <div class="horse-entry">
+                    <div class="info-box"><p>🏇 Horse #${index + 1}</p></div>
+                    <div class="form-group">
+                        <label class="form-label">Horse Name<span class="required">*</span></label>
+                        <input type="text" class="form-input horse-name-input" id="horse-name-${index}" placeholder="e.g., Irish Charger">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Owner Name (for Announcement)<span class="required">*</span></label>
+                        <input type="text" class="form-input owner-name-input" id="owner-name-${index}" placeholder="e.g., The Murphy Family">
+                    </div>
+                </div>
+            `;
+        }
+        
+        function updateHorseFields() {
+            const qty = cart.horses.quantity;
+            let html = '';
+            cart.horses.entries = []; // Reset entries
+
+            for (let i = 0; i < qty; i++) {
+                html += generateHorseEntryHTML(i);
+                // Create placeholders for data submission
+                cart.horses.entries.push({ number: i + 1, name: '', owner: '' });
+            }
+            DOM.horseEntriesContainer.innerHTML = html;
+        }
+
+        DOM.horseSponsorshipCheck.addEventListener('change', function() {
+            DOM.horseSponsorshipFields.classList.toggle('visible', this.checked);
+            if (!this.checked) { 
+                DOM.horseQuantity.value = '';
+                cart.horses = { quantity: 0, totalPrice: 0, entries: [] }; 
+            }
+            updateCart();
+        });
+
+        DOM.horseQuantity.addEventListener('change', function() {
+            const qty = parseInt(this.value) || 0;
+            cart.horses.quantity = qty;
+            cart.horses.totalPrice = qty * PRICES.HORSE;
+            updateHorseFields();
+            updateCart();
+        });
+
+        // Event listener for all dynamically added horse name/owner fields
+        DOM.horseEntriesContainer.addEventListener('input', function(e) {
+            if (e.target.classList.contains('horse-name-input') || e.target.classList.contains('owner-name-input')) {
+                // Find the index from the element's ID (e.g., horse-name-0 -> 0)
+                const index = parseInt(e.target.id.split('-').pop());
+                const horseEntry = cart.horses.entries[index];
+
+                if (horseEntry) {
+                    if (e.target.classList.contains('horse-name-input')) {
+                        horseEntry.name = e.target.value.trim();
+                    } else if (e.target.classList.contains('owner-name-input')) {
+                        horseEntry.owner = e.target.value.trim();
+                    }
+                }
+            }
+        });
+
+
+        // --- PROGRAM AD LOGIC ---
+        let adCount = 0;
+
+        function getAdPriceAndLabel(value) {
+            switch (value) {
+                case 'business-card-25': return { price: PRICES.AD_BUSINESS_CARD, sizeLabel: 'Business Card (¼ page)' };
+                case 'quarter-25': return { price: PRICES.AD_QUARTER, sizeLabel: '¼ Page' };
+                case 'half-50': return { price: PRICES.AD_HALF, sizeLabel: '½ Page' };
+                case 'full-100': return { price: PRICES.AD_FULL, sizeLabel: 'Full Page' };
+                case 'full-sponsored-120': return { price: PRICES.AD_FULL_SPONSORED, sizeLabel: 'Full Page + Sponsored Race' };
+                default: return { price: 0, sizeLabel: '' };
+            }
+        }
+
+        function generateAdHTML(index) {
+            return `
+                <div class="ad-container" id="ad-container-${index}" data-ad-index="${index}">
+                    ${index > 0 ? `<span class="remove-btn" onclick="removeAd(${index})">Remove Ad #${index + 1}</span>` : ''}
+                    <div class="info-box"><p>📖 **Ad #${index + 1}**</p></div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Ad Size & Price<span class="required">*</span></label>
+                        <select class="form-select ad-size-select" data-index="${index}">
+                            <option value="">Select Size</option>
+                            <option value="business-card-25">$25 - Business Card (¼ page)</option>
+                            <option value="quarter-25">$25 - ¼ Page</option>
+                            <option value="half-50">$50 - ½ Page</option>
+                            <option value="full-100">$100 - Full Page</option>
+                            <option value="full-sponsored-120">$120 - Full Page + Sponsored Race</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Business / Purchaser Name<span class="required">*</span></label>
+                        <input type="text" class="form-input ad-business-name" data-index="${index}" placeholder="Name for Program Book">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Ad Design Option<span class="required">*</span></label>
+                        <select class="form-select ad-design-option" data-index="${index}">
+                            <option value="">Select Option</option>
+                            <option value="upload">I'll Design & Upload My Own Ad</option>
+                            <option value="create">Please Create an Ad for Me</option>
+                        </select>
+                    </div>
+                    
+                    <div class="ad-upload-field" data-index="${index}" style="display:none;">
+                        <div class="info-box"><p>Upload your PDF, JPG, or PNG file here.</p></div>
+                        <div class="form-group">
+                            <label class="form-label">Upload Graphic</label>
+                            <input type="file" class="form-input ad-file-upload" data-index="${index}" accept=".pdf,.jpg,.jpeg,.png">
+                        </div>
+                    </div>
+
+                    <div class="ad-create-field" data-index="${index}" style="display:none;">
+                        <div class="form-group">
+                            <label class="form-label">Ad Content / Instructions</label>
+                            <textarea class="form-input ad-content-instructions" data-index="${index}" placeholder="e.g., Use logo attached and text: 'Proud Sponsor of the BC Dancers!'"></textarea>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function addAd() {
+            if (cart.programAds.length >= 5) return; // Max 5 ads
+
+            const index = cart.programAds.length;
+            cart.programAds.push({ 
+                adNumber: index + 1, price: 0, sizeLabel: '', businessName: '', designOption: '', 
+                file: null, instructions: ''
+            });
+
+            DOM.adsContainer.insertAdjacentHTML('beforeend', generateAdHTML(index));
+
+            // Show/Hide 'Add Another Ad' button
+            DOM.addAdBtn.style.display = cart.programAds.length < 5 ? 'block' : 'none';
+        }
+
+        function removeAd(index) {
+            cart.programAds.splice(index, 1);
+            const adElement = document.getElementById(`ad-container-${index}`);
+            if (adElement) adElement.remove();
+
+            // Re-index remaining ads in the cart and DOM
+            cart.programAds.forEach((ad, i) => {
+                ad.adNumber = i + 1;
+                const container = document.getElementById(`ad-container-${ad.adIndex}`);
+                if (container) container.id = `ad-container-${i}`;
+                ad.adIndex = i;
+            });
+            adCount = cart.programAds.length;
+
+            DOM.addAdBtn.style.display = cart.programAds.length < 5 ? 'block' : 'none';
+            updateCart();
+        }
+
+        DOM.programAdCheck.addEventListener('change', function() {
+            DOM.programAdFields.classList.toggle('visible', this.checked);
+            if (this.checked && cart.programAds.length === 0) {
+                addAd();
+            } else if (!this.checked) {
+                DOM.adsContainer.innerHTML = '';
+                cart.programAds = [];
+                DOM.addAdBtn.style.display = 'none';
+            }
+            updateCart();
+        });
+
+        DOM.addAdBtn.addEventListener('click', addAd);
+
+        // Event listener for all dynamically added ad fields
+        DOM.programAdFields.addEventListener('change', function(e) {
+            const target = e.target;
+            const index = parseInt(target.getAttribute('data-index'));
+            const ad = cart.programAds[index];
+            if (!ad) return;
+
+            if (target.classList.contains('ad-size-select')) {
+                const { price, sizeLabel } = getAdPriceAndLabel(target.value);
+                ad.price = price;
+                ad.sizeLabel = sizeLabel;
+                updateCart();
+            } else if (target.classList.contains('ad-design-option')) {
+                ad.designOption = target.value;
+                const adContainer = document.getElementById(`ad-container-${index}`);
+                if (adContainer) {
+                    adContainer.querySelector('.ad-upload-field').style.display = (target.value === 'upload') ? 'block' : 'none';
+                    adContainer.querySelector('.ad-create-field').style.display = (target.value === 'create') ? 'block' : 'none';
+                }
+            } else if (target.classList.contains('ad-file-upload')) {
+                ad.file = target.files[0] || null;
+            }
+        });
+
+        DOM.programAdFields.addEventListener('input', function(e) {
+            const target = e.target;
+            const index = parseInt(target.getAttribute('data-index'));
+            const ad = cart.programAds[index];
+            if (!ad) return;
+
+            if (target.classList.contains('ad-business-name')) {
+                ad.businessName = target.value.trim();
+            } else if (target.classList.contains('ad-content-instructions')) {
+                ad.instructions = target.value.trim();
+            }
+        });
+
+
+        // --- RAFFLE TICKET LOGIC ---
+
+        function updateRaffleFields() {
+            const type = DOM.raffleType.value;
+            const isIndividual = type === 'individual';
+            const isBook = type === 'book';
+
+            DOM.raffleIndividualOptions.style.display = isIndividual ? 'block' : 'none';
+            DOM.raffleBookOptions.style.display = isBook ? 'block' : 'none';
+            
+            const qty = isIndividual ? (parseInt(DOM.raffleQuantityIndividual.value) || 0) : 
+                        isBook ? (parseInt(DOM.raffleQuantityBook.value) || 0) : 0;
+            
+            let totalEntries = 0;
+            let totalTickets = 0;
+            let html = '';
+            cart.raffleTickets.entries = []; // Reset entries
+
+            if (isIndividual) {
+                totalEntries = qty;
+                totalTickets = qty;
+            } else if (isBook) {
+                totalEntries = qty; // 1 entry per book
+                totalTickets = qty * 5;
+            }
+
+            for (let i = 0; i < totalEntries; i++) {
+                const ticketsPerEntry = isBook ? 5 : 1;
+                const entryLabel = isBook ? `Book #${i + 1} (${ticketsPerEntry} Tickets)` : `Ticket #${i + 1}`;
+                
+                html += `
+                    <div class="horse-entry">
+                        <div class="info-box"><p>🎫 ${entryLabel}</p></div>
+                        <div class="form-group">
+                            <label class="form-label">Owner's Full Name<span class="required">*</span></label>
+                            <input type="text" class="form-input raffle-name-input" id="raffle-name-${i}" placeholder="Name for Ticket(s)">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Owner's Contact (Email/Phone)<span class="required">*</span></label>
+                            <input type="text" class="form-input raffle-contact-input" id="raffle-contact-${i}" placeholder="Email or Phone">
+                        </div>
+                    </div>
+                `;
+                // Create placeholders for data submission
+                cart.raffleTickets.entries.push({ 
+                    number: i + 1, name: '', contact: '', 
+                    tickets: ticketsPerEntry // Store how many tickets this entry is for
+                });
+            }
+
+            DOM.raffleEntriesContainer.innerHTML = html;
+
+            // Update cart data structure
+            cart.raffleTickets.type = type;
+            cart.raffleTickets.individualTickets = isIndividual ? qty : 0;
+            cart.raffleTickets.books = isBook ? qty : 0;
+            cart.raffleTickets.totalQuantity = totalTickets;
+            cart.raffleTickets.totalPrice = (isIndividual ? qty * PRICES.RAFFLE_INDIVIDUAL : isBook ? qty * PRICES.RAFFLE_BOOK : 0);
+            
+            updateCart();
+        }
+
+        DOM.raffleTicketsCheck.addEventListener('change', function() {
+            DOM.raffleTicketsFields.classList.toggle('visible', this.checked);
+            if (!this.checked) { 
+                DOM.raffleType.value = '';
+                DOM.raffleQuantityIndividual.value = '';
+                DOM.raffleQuantityBook.value = '';
+                cart.raffleTickets = null; 
+            } else {
+                 cart.raffleTickets = { 
+                    type: '', individualTickets: 0, books: 0, 
+                    totalQuantity: 0, totalPrice: 0, entries: [] 
+                };
+            }
+            updateRaffleFields();
+        });
+
+        DOM.raffleType.addEventListener('change', function() {
+            DOM.raffleQuantityIndividual.value = ''; // Clear other quantity
+            DOM.raffleQuantityBook.value = ''; // Clear other quantity
+            updateRaffleFields();
+        });
+
+        DOM.raffleQuantityIndividual.addEventListener('change', updateRaffleFields);
+        DOM.raffleQuantityBook.addEventListener('change', updateRaffleFields);
+        
+        // Event listener for all dynamically added raffle name/contact fields
+        DOM.raffleEntriesContainer.addEventListener('input', function(e) {
+            if (e.target.classList.contains('raffle-name-input') || e.target.classList.contains('raffle-contact-input')) {
+                const index = parseInt(e.target.id.split('-').pop());
+                const entry = cart.raffleTickets.entries[index];
+
+                if (entry) {
+                    if (e.target.classList.contains('raffle-name-input')) {
+                        entry.name = e.target.value.trim();
+                    } else if (e.target.classList.contains('raffle-contact-input')) {
+                        entry.contact = e.target.value.trim();
+                    }
+                }
+            }
+        });
+
+
+        // --- DONATION LOGIC ---
+
+        function updateDonationFields() {
+            const type = DOM.donationType.value;
+            DOM.giftBasketFields.style.display = (type === 'basket') ? 'block' : 'none';
+            DOM.cashDonationFields.style.display = (type === 'cash') ? 'block' : 'none';
+
+            if (type === 'basket') {
+                cart.donation = {
+                    type: 'basket',
+                    description: DOM.basketDescription.value.trim(),
+                    value: DOM.basketValue.value,
+                    valueLabel: DOM.basketValue.options[DOM.basketValue.selectedIndex].text,
+                    recognition: DOM.recognitionName.value.trim()
+                };
+                cart.cashDonation = null; // Clear cash donation if basket is selected
+                DOM.cashDonationAmount.value = '';
+            } else if (type === 'cash') {
+                const amount = parseFloat(DOM.cashDonationAmount.value) || 0;
+                cart.cashDonation = {
+                    amount: amount,
+                    purpose: DOM.cashPurpose.value,
+                    recognition: DOM.recognitionName.value.trim()
+                };
+                cart.donation = null; // Clear basket donation if cash is selected
+                DOM.basketDescription.value = '';
+                DOM.basketValue.value = '';
+            } else {
+                cart.donation = null;
+                cart.cashDonation = null;
+            }
+            updateCart();
+        }
+
+        DOM.basketDonationCheck.addEventListener('change', function() {
+            DOM.basketDonationFields.classList.toggle('visible', this.checked);
+            if (!this.checked) { 
+                DOM.donationType.value = '';
+                DOM.giftBasketFields.style.display = 'none';
+                DOM.cashDonationFields.style.display = 'none';
+                cart.donation = null;
+                cart.cashDonation = null;
+            }
+            updateDonationFields();
+        });
+
+        DOM.donationType.addEventListener('change', updateDonationFields);
+        DOM.cashDonationAmount.addEventListener('input', updateDonationFields);
+        DOM.basketDescription.addEventListener('input', updateDonationFields);
+        DOM.basketValue.addEventListener('change', updateDonationFields);
+        DOM.cashPurpose.addEventListener('change', updateDonationFields);
+        DOM.recognitionName.addEventListener('input', updateDonationFields);
+
+
+        // --- EVENT TICKET LOGIC ---
+        
+        DOM.eventTicketsCheck.addEventListener('change', function() {
+            DOM.eventTicketsFields.classList.toggle('visible', this.checked);
+            if (!this.checked) { 
+                DOM.ticketQuantity.value = '';
+                DOM.tableName.value = '';
+                DOM.tableReservationField.style.display = 'none';
+                cart.eventTickets = null; 
+            }
+            updateCart();
+        });
+
+        DOM.ticketQuantity.addEventListener('change', function() {
+            const qty = parseInt(this.value) || 0;
+            cart.eventTickets = qty > 0 ? { quantity: qty, price: PRICES.TICKET, total: qty * PRICES.TICKET, tableName: DOM.tableName.value.trim() } : null;
+            
+            // Conditional Table Reservation Field
+            DOM.tableReservationField.style.display = (qty >= 8) ? 'block' : 'none';
+            if (qty < 8) DOM.tableName.value = ''; // Clear if requirement is gone
+
+            updateCart();
+        });
+        
+        DOM.tableName.addEventListener('input', function() {
+            if (cart.eventTickets) {
+                cart.eventTickets.tableName = this.value.trim();
+            }
+        });
+
+        // --- FINAL CHECKOUT BINDING ---
+
+        // Bind all required purchaser fields to updateCart to enable/disable button
+        [DOM.firstName, DOM.lastName, DOM.email, DOM.phone, DOM.dancerFamily].forEach(field => {
+            field.addEventListener('input', () => validateForm());
+            field.addEventListener('change', () => validateForm());
+        });
+
+        DOM.coverFeesCheckbox.addEventListener('change', function() {
+            const subtotal = parseFloat(DOM.subtotalDisplay.textContent.replace('$', '')) || 0;
+            updateTotal(subtotal);
+        });
+
+        // REPLACING EXISTING CLICK HANDLER WITH YOUR PROVIDED CODE
+        DOM.checkoutBtn.addEventListener('click', async function() {
+            if (validateForm()) {
+                // [KEEP ALL YOUR EXISTING VALIDATION CODE HERE]
+                // ... all the validation checks ...
+                // The validateForm() function above already handles all your validation checks.
+
+                // Collect all data for backend submission (This is the 'purchaseData' variable)
+                const purchaserInfo = {
+                    firstName: DOM.firstName.value.trim(),
+                    lastName: DOM.lastName.value.trim(),
+                    email: DOM.email.value.trim(),
+                    phone: DOM.phone.value.trim(),
+                    dancerFamily: DOM.dancerFamily.value,
+                    subtotal: parseFloat(DOM.subtotalDisplay.textContent.replace('$', '')),
+                    total: parseFloat(DOM.totalDisplay.textContent.replace('$', '')),
+                    coverFees: DOM.coverFeesCheckbox.checked,
+                };
+                
+                const purchaseData = {
+                    purchaser: purchaserInfo,
+                    cart: cart // The complete cart object with all entries
+                };
+
+                // After all validation passes, add this at the end:
+                
+                console.log('✅ All validation passed - Creating Stripe checkout');
+
+                // Disable button and show loading
+                const btn = this;
+                btn.disabled = true;
+                btn.textContent = 'Processing...';
+
+                try {
+                    // Send data to Netlify function
+                    const response = await fetch('/.netlify/functions/create-checkout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(purchaseData)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.url) {
+                        // Redirect to Stripe Checkout
+                        window.location.href = result.url;
+                    } else {
+                        // Handle cases where the function succeeded but didn't return a URL
+                        throw new Error(result.error || 'No checkout URL returned');
+                    }
+
+                } catch (error) {
+                    console.error('Checkout error:', error);
+                    alert('❌ There was an error creating your checkout session. Please try again.');
+                    btn.disabled = false;
+                    btn.textContent = 'Proceed to Checkout';
+                }
             }
         });
 
