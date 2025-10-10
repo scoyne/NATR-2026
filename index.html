@@ -923,7 +923,7 @@
 
 
         // --- RAFFLE TICKET LOGIC ---
-
+        /* testing adjusted script
         function updateRaffleFields() {
             const type = DOM.raffleType.value;
             const isIndividual = type === 'individual';
@@ -983,7 +983,78 @@
             
             updateCart();
         }
+        */
+        // new test script
+        function updateRaffleFields() {
+    const type = DOM.raffleType.value;
+    const isIndividual = type === 'individual';
+    const isBook = type === 'book';
 
+    DOM.raffleIndividualOptions.style.display = isIndividual ? 'block' : 'none';
+    DOM.raffleBookOptions.style.display = isBook ? 'block' : 'none';
+    
+    // FIX: Check if raffleTickets exists before accessing
+    if (!cart.raffleTickets) {
+        cart.raffleTickets = { 
+            type: '', 
+            individualTickets: 0, 
+            books: 0, 
+            totalQuantity: 0, 
+            totalPrice: 0, 
+            entries: [] 
+        };
+    }
+    
+    const qty = isIndividual ? (parseInt(DOM.raffleQuantityIndividual.value) || 0) : 
+                isBook ? (parseInt(DOM.raffleQuantityBook.value) || 0) : 0;
+    
+    let totalEntries = 0;
+    let totalTickets = 0;
+    let html = '';
+    cart.raffleTickets.entries = []; // Now safe to reset
+
+    if (isIndividual) {
+        totalEntries = qty;
+        totalTickets = qty;
+    } else if (isBook) {
+        totalEntries = qty;
+        totalTickets = qty * 5;
+    }
+
+    for (let i = 0; i < totalEntries; i++) {
+        const ticketsPerEntry = isBook ? 5 : 1;
+        const entryLabel = isBook ? `Book #${i + 1} (${ticketsPerEntry} Tickets)` : `Ticket #${i + 1}`;
+        
+        html += `
+            <div class="horse-entry">
+                <div class="info-box"><p>🎫 ${entryLabel}</p></div>
+                <div class="form-group">
+                    <label class="form-label">Owner's Full Name<span class="required">*</span></label>
+                    <input type="text" class="form-input raffle-name-input" id="raffle-name-${i}" placeholder="Name for Ticket(s)">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Owner's Contact (Email/Phone)<span class="required">*</span></label>
+                    <input type="text" class="form-input raffle-contact-input" id="raffle-contact-${i}" placeholder="Email or Phone">
+                </div>
+            </div>
+        `;
+        cart.raffleTickets.entries.push({ 
+            number: i + 1, name: '', contact: '', 
+            tickets: ticketsPerEntry
+        });
+    }
+
+    DOM.raffleEntriesContainer.innerHTML = html;
+
+    cart.raffleTickets.type = type;
+    cart.raffleTickets.individualTickets = isIndividual ? qty : 0;
+    cart.raffleTickets.books = isBook ? qty : 0;
+    cart.raffleTickets.totalQuantity = totalTickets;
+    cart.raffleTickets.totalPrice = (isIndividual ? qty * PRICES.RAFFLE_INDIVIDUAL : isBook ? qty * PRICES.RAFFLE_BOOK : 0);
+    
+    updateCart();
+}
+        //end new test script
         DOM.raffleTicketsCheck.addEventListener('change', function() {
             DOM.raffleTicketsFields.classList.toggle('visible', this.checked);
             if (!this.checked) { 
