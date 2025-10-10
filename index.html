@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NATR Purchase Form - Complete Working Version</title>
     <style>
-        /* --- CSS STYLES (Provided in Original Code) --- */
+        /* --- CSS STYLES (Reverted to Original) --- */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -1152,11 +1152,12 @@ DOM.coverFeesCheckbox.addEventListener('change', function() {
 DOM.checkoutBtn.addEventListener('click', async function() {
     // Validate form - only shows alerts if invalid
     if (!validateForm()) {
+        // Using a simple alert, since you were using it previously.
         alert('❌ Please fill in all required fields before proceeding.');
         return;
     }
 
-    // Collect all data
+    // Collect essential purchaser and totals data
     const purchaserInfo = {
         firstName: DOM.firstName.value.trim(),
         lastName: DOM.lastName.value.trim(),
@@ -1188,6 +1189,25 @@ DOM.checkoutBtn.addEventListener('click', async function() {
     btn.textContent = 'Processing...';
 
     try {
+        // --- FIX FOR METADATA OVERFLOW ---
+        // Create a small, summary version of the cart for Stripe metadata
+        // This ensures the total metadata size stays under the 500-character limit.
+        const summaryCart = {
+            tickets: cart.eventTickets?.quantity || 0,
+            horses: cart.horses?.quantity || 0,
+            ads: cart.programAds.length,
+            raffles: cart.raffleTickets?.totalQuantity || 0,
+            donation: cart.cashDonation?.amount || 0,
+            total: purchaseData.totals.finalTotal,
+            family: purchaseData.purchaser.dancerFamily
+        };
+        
+        // Update the purchaseData object to only include the summary cart for metadata purposes
+        // NOTE: The full 'cart' object is still sent to the Netlify function, where it can be saved/logged.
+        purchaseData.metadataSummary = JSON.stringify(summaryCart);
+        // --- END METADATA FIX ---
+
+
         // Send data to Netlify function
         console.log('🌐 Calling Netlify function...');
         
