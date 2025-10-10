@@ -109,7 +109,7 @@ exports.handler = async (event) => {
     }
 
     // Cash Donation
-    if (data.cart.donation && data.cart.donation.type === 'cash' && data.cart.donation.amount > 0) {
+    if (data.cart.cashDonation && data.cart.cashDonation.amount > 0) {
       lineItems.push({
         price_data: {
           currency: 'usd',
@@ -117,7 +117,7 @@ exports.handler = async (event) => {
             name: 'Cash Donation',
             description: 'Tax-deductible donation to Brady Campbell Irish Dance School'
           },
-          unit_amount: Math.round(data.cart.donation.amount * 100)
+          unit_amount: Math.round(data.cart.cashDonation.amount * 100)
         },
         quantity: 1
       });
@@ -149,6 +149,19 @@ exports.handler = async (event) => {
       };
     }
 
+    // FIX FOR METADATA OVERFLOW: Use the pre-stringified summary sent from the client
+    const stripeMetadata = {
+        purchaserName: `${data.purchaser.firstName} ${data.purchaser.lastName}`,
+        dancerFamily: data.purchaser.dancerFamily,
+        phone: data.purchaser.phone,
+        // *** THIS IS THE CRITICAL CHANGE ***
+        orderSummary: data.metadataSummary || 'No summary provided' 
+    };
+    
+    // The full data object (data) can be saved to your database here if needed.
+    // We only pass the small stripeMetadata object to the Stripe session.
+
+
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -157,12 +170,7 @@ exports.handler = async (event) => {
       success_url: success_url,
       cancel_url: cancel_url,
       customer_email: data.purchaser.email,
-      metadata: {
-        purchaserName: `${data.purchaser.firstName} ${data.purchaser.lastName}`,
-        dancerFamily: data.purchaser.dancerFamily,
-        phone: data.purchaser.phone,
-        orderData: JSON.stringify(data)
-      }
+      metadata: stripeMetadata // Use the summarized metadata object
     });
 
     // Return the session URL
@@ -173,7 +181,6 @@ exports.handler = async (event) => {
 
   } catch (error) {
     console.error('Stripe handler error:', error);
-    // Return a generic 500 status but include the specific error message for debugging
     return {
       statusCode: 500,
       body: JSON.stringify({ error: error.message || 'An unknown server error occurred.' })
