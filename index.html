@@ -1277,215 +1277,145 @@
 
 
         // --- RAFFLE TICKET LOGIC ---
+          // --- FIXED RAFFLE TICKET LOGIC ---
 
-  /* updating updateRaffleFileds() function
-    function updateRaffleFields() {
-    const type = DOM.raffleType.value;
-    const isIndividual = type === 'individual';
-    const isBook = type === 'book';
-
-    DOM.raffleIndividualOptions.style.display = isIndividual ? 'block' : 'none';
-    DOM.raffleBookOptions.style.display = isBook ? 'block' : 'none';
-    
-    // FIX: Check if raffleTickets exists before accessing (Good practice, kept)
-    if (!cart.raffleTickets) {
-        cart.raffleTickets = { 
-            type: '', 
-            individualTickets: 0, 
-            books: 0, 
-            totalQuantity: 0, 
-            totalPrice: 0, 
-            entries: [] 
-        };
-    }
-    
-    const qty = isIndividual ? (parseInt(DOM.raffleQuantityIndividual.value) || 0) : 
-                isBook ? (parseInt(DOM.raffleQuantityBook.value) || 0) : 0;
-    
-    let totalEntries = 0;
-    let totalTickets = 0;
-    let html = '';
-    cart.raffleTickets.entries = []; // Now safe to reset
-
-    if (isIndividual) {
-        totalEntries = qty;
-        totalTickets = qty;
-    } else if (isBook) {
-        totalEntries = qty;
-        totalTickets = qty * 5;
-    }
-
-    for (let i = 0; i < totalEntries; i++) {
-        const ticketsPerEntry = isBook ? 5 : 1;
-        const entryLabel = isBook ? `Book #${i + 1} (${ticketsPerEntry} Tickets)` : `Ticket #${i + 1}`;
-        
-        html += `
-            <div class="horse-entry">
-                <div class="info-box"><p>🎫 ${entryLabel}</p></div>
-                <div class="form-group">
-                    <label class="form-label">Owner's Full Name<span class="required">*</span></label>
-                    <input type="text" class="form-input raffle-name-input" id="raffle-name-${i}" placeholder="Name for Ticket(s)">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Owner's Contact (Email/Phone)<span class="required">*</span></label>
-                    <input type="text" class="form-input raffle-contact-input" id="raffle-contact-${i}" placeholder="Email or Phone">
-                </div>
-            </div>
-        `;
-        cart.raffleTickets.entries.push({ 
-            number: i + 1, name: '', contact: '', 
-            tickets: ticketsPerEntry
-        });
-    }
-
-    DOM.raffleEntriesContainer.innerHTML = html;
-
-    cart.raffleTickets.type = type;
-    cart.raffleTickets.individualTickets = isIndividual ? qty : 0;
-    cart.raffleTickets.books = isBook ? qty : 0;
-    cart.raffleTickets.totalQuantity = totalTickets;
-    cart.raffleTickets.totalPrice = (isIndividual ? qty * PRICES.RAFFLE_INDIVIDUAL : isBook ? qty * PRICES.RAFFLE_BOOK : 0);
-    
-    // updateCart(); // <-- REMOVED: This was the source of the infinite recursion
-}
-
-        DOM.raffleTicketsCheck.addEventListener('change', function() {
-            DOM.raffleTicketsFields.classList.toggle('visible', this.checked);
-            if (!this.checked) { 
-                DOM.raffleType.value = '';
-                DOM.raffleQuantityIndividual.value = '';
-                DOM.raffleQuantityBook.value = '';
-                cart.raffleTickets = null; 
-            } else {
-                 cart.raffleTickets = { 
-                    type: '', individualTickets: 0, books: 0, 
-                    totalQuantity: 0, totalPrice: 0, entries: [] 
-                };
-            }
-            // Called directly to initialize fields/cart data
-            updateRaffleFields();
-            // Now call updateCart to recalculate totals and re-run updateRaffleFields from cart update
-            updateCart(); 
-        });
-
-        DOM.raffleType.addEventListener('change', function() {
-            DOM.raffleQuantityIndividual.value = ''; // Clear other quantity
-            DOM.raffleQuantityBook.value = ''; // Clear other quantity
-            updateRaffleFields();
-            updateCart(); // Need to call cart update here since updateRaffleFields no longer calls it
-        });
-
-        DOM.raffleQuantityIndividual.addEventListener('change', function() {
-            updateRaffleFields();
-            updateCart(); // Need to call cart update here since updateRaffleFields no longer calls it
-        });
-
-        DOM.raffleQuantityBook.addEventListener('change', function() {
-            updateRaffleFields();
-            updateCart(); // Need to call cart update here since updateRaffleFields no longer calls it
-        });
-        
-        // Event listener for all dynamically added raffle name/contact fields
-        DOM.raffleEntriesContainer.addEventListener('input', function(e) {
-            if (e.target.classList.contains('raffle-name-input') || e.target.classList.contains('raffle-contact-input')) {
-                const index = parseInt(e.target.id.split('-').pop());
-                const entry = cart.raffleTickets.entries[index];
-
-                if (entry) {
-                    if (e.target.classList.contains('raffle-name-input')) {
-                        entry.name = e.target.value.trim();
-                    } else if (e.target.classList.contains('raffle-contact-input')) {
-                        entry.contact = e.target.value.trim();
-                    }
-                }
-            }
-        });
-      */
-      function updateRaffleFields() {
-        const type = DOM.raffleType.value;
-        const isIndividual = type === 'individual';
-        const isBook = type === 'book';
-        
-        // Toggle visibility of the correct input sections
-        DOM.raffleIndividualOptions.style.display = isIndividual ? 'block' : 'none';
-        DOM.raffleBookOptions.style.display = isBook ? 'block' : 'none';
-    
-        // Ensure the cart object is initialized before use (THE FIX)
-        if (!cart.raffleTickets) {
-            cart.raffleTickets = { 
-                type: '', 
-                individualTickets: 0, 
-                books: 0, 
-                totalQuantity: 0, 
-                totalPrice: 0, 
-                entries: [] 
-            };
-        }
-    
-        // Get selected quantity
-        const qty = isIndividual 
-            ? (parseInt(DOM.raffleQuantityIndividual.value) || 0) 
-            : isBook 
-            ? (parseInt(DOM.raffleQuantityBook.value) || 0) 
-            : 0;
-    
-        let totalEntries = 0;
-        let totalTickets = 0;
-        let html = '';
-        
-        // Reset entries array (now safe)
-        cart.raffleTickets.entries = []; 
-        
-        if (isIndividual) {
-            totalEntries = qty;
-            totalTickets = qty;
-        } else if (isBook) {
-            totalEntries = qty;
-            totalTickets = qty * 5;
-        }
-    
-        // Generate dynamic fields for name/contact
-        for (let i = 0; i < totalEntries; i++) {
-            const ticketsPerEntry = isBook ? 5 : 1;
-            const entryLabel = isBook ? `Book #${i + 1} (${ticketsPerEntry} Tickets)` : `Ticket #${i + 1}`;
-            
-            html += `
-                <div class="horse-entry">
-                    <div class="info-box"><p>🎫 ${entryLabel}</p></div>
-                    <div class="form-group">
-                        <label class="form-label">Owner's Full Name<span class="required">*</span></label>
-                        <input type="text" class="form-input raffle-name-input" id="raffle-name-${i}" placeholder="Name for Ticket(s)">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Owner's Contact (Email/Phone)<span class="required">*</span></label>
-                        <input type="text" class="form-input raffle-contact-input" id="raffle-contact-${i}" placeholder="Email or Phone">
-                    </div>
-                </div>
-            `;
-            // Store entry structure
-            cart.raffleTickets.entries.push({ 
-                number: i + 1, name: '', contact: '', 
-                tickets: ticketsPerEntry
-            });
-        }
-    
-        DOM.raffleEntriesContainer.innerHTML = html;
-        
-        // Update cart object with final values
-        cart.raffleTickets.type = type;
-        cart.raffleTickets.individualTickets = isIndividual ? qty : 0;
-        cart.raffleTickets.books = isBook ? qty : 0;
-        cart.raffleTickets.totalQuantity = totalTickets;
-        cart.raffleTickets.totalPrice = (isIndividual ? qty * PRICES.RAFFLE_INDIVIDUAL : isBook ? qty * PRICES.RAFFLE_BOOK : 0);
-        
-        // Bind event listeners to the new input fields
-        DOM.raffleEntriesContainer.querySelectorAll('.raffle-name-input, .raffle-contact-input').forEach(input => {
-            input.addEventListener('input', () => validateForm(false)); // Don't show alert on input
-        });
-        
-        updateCart();
-    }
-
+          function updateRaffleFields() {
+              const type = DOM.raffleType.value;
+              const isIndividual = type === 'individual';
+              const isBook = type === 'book';
+              
+              // Toggle visibility of the correct input sections
+              DOM.raffleIndividualOptions.style.display = isIndividual ? 'block' : 'none';
+              DOM.raffleBookOptions.style.display = isBook ? 'block' : 'none';
+          
+              // Ensure the cart object is initialized before use
+              if (!cart.raffleTickets) {
+                  cart.raffleTickets = { 
+                      type: '', 
+                      individualTickets: 0, 
+                      books: 0, 
+                      totalQuantity: 0, 
+                      totalPrice: 0, 
+                      entries: [] 
+                  };
+              }
+          
+              // Get selected quantity
+              const qty = isIndividual 
+                  ? (parseInt(DOM.raffleQuantityIndividual.value) || 0) 
+                  : isBook 
+                  ? (parseInt(DOM.raffleQuantityBook.value) || 0) 
+                  : 0;
+          
+              let totalEntries = 0;
+              let totalTickets = 0;
+              let html = '';
+              
+              // Reset entries array (now safe)
+              cart.raffleTickets.entries = []; 
+              
+              if (isIndividual) {
+                  totalEntries = qty;
+                  totalTickets = qty;
+              } else if (isBook) {
+                  totalEntries = qty;
+                  totalTickets = qty * 5;
+              }
+          
+              // Generate dynamic fields for name/contact
+              for (let i = 0; i < totalEntries; i++) {
+                  const ticketsPerEntry = isBook ? 5 : 1;
+                  const entryLabel = isBook ? `Book #${i + 1} (${ticketsPerEntry} Tickets)` : `Ticket #${i + 1}`;
+                  
+                  html += `
+                      <div class="horse-entry">
+                          <div class="info-box"><p>🎫 ${entryLabel}</p></div>
+                          <div class="form-group">
+                              <label class="form-label">Owner's Full Name<span class="required">*</span></label>
+                              <input type="text" class="form-input raffle-name-input" id="raffle-name-${i}" placeholder="Name for Ticket(s)">
+                          </div>
+                          <div class="form-group">
+                              <label class="form-label">Owner's Contact (Email/Phone)<span class="required">*</span></label>
+                              <input type="text" class="form-input raffle-contact-input" id="raffle-contact-${i}" placeholder="Email or Phone">
+                          </div>
+                      </div>
+                  `;
+                  // Store entry structure
+                  cart.raffleTickets.entries.push({ 
+                      number: i + 1, name: '', contact: '', 
+                      tickets: ticketsPerEntry
+                  });
+              }
+          
+              DOM.raffleEntriesContainer.innerHTML = html;
+              
+              // Update cart object with final values
+              cart.raffleTickets.type = type;
+              cart.raffleTickets.individualTickets = isIndividual ? qty : 0;
+              cart.raffleTickets.books = isBook ? qty : 0;
+              cart.raffleTickets.totalQuantity = totalTickets;
+              cart.raffleTickets.totalPrice = (isIndividual ? qty * PRICES.RAFFLE_INDIVIDUAL : isBook ? qty * PRICES.RAFFLE_BOOK : 0);
+              
+              // ⚠️ CRITICAL FIX: DO NOT CALL updateCart() HERE
+              // This was causing infinite recursion because updateCart() calls updateRaffleFields()
+              // The cart will be updated by the event listener that triggered this function
+          }
+          
+          // Event Listeners for Raffle Tickets
+          DOM.raffleTicketsCheck.addEventListener('change', function() {
+              DOM.raffleTicketsFields.classList.toggle('visible', this.checked);
+              if (!this.checked) { 
+                  DOM.raffleType.value = '';
+                  DOM.raffleQuantityIndividual.value = '';
+                  DOM.raffleQuantityBook.value = '';
+                  cart.raffleTickets = null; 
+                  updateCart(); // Update cart when unchecking
+              } else {
+                  cart.raffleTickets = { 
+                      type: '', individualTickets: 0, books: 0, 
+                      totalQuantity: 0, totalPrice: 0, entries: [] 
+                  };
+                  updateRaffleFields(); // Initialize fields
+                  updateCart(); // Update cart when checking
+              }
+          });
+          
+          DOM.raffleType.addEventListener('change', function() {
+              DOM.raffleQuantityIndividual.value = ''; // Clear other quantity
+              DOM.raffleQuantityBook.value = ''; // Clear other quantity
+              updateRaffleFields(); // Update fields based on type
+              updateCart(); // Update cart after fields change
+          });
+          
+          DOM.raffleQuantityIndividual.addEventListener('change', function() {
+              updateRaffleFields(); // Generate entry fields
+              updateCart(); // Update cart with new totals
+          });
+          
+          DOM.raffleQuantityBook.addEventListener('change', function() {
+              updateRaffleFields(); // Generate entry fields
+              updateCart(); // Update cart with new totals
+          });
+          
+          // Event listener for all dynamically added raffle name/contact fields
+          DOM.raffleEntriesContainer.addEventListener('input', function(e) {
+              if (e.target.classList.contains('raffle-name-input') || e.target.classList.contains('raffle-contact-input')) {
+                  const index = parseInt(e.target.id.split('-').pop());
+                  const entry = cart.raffleTickets.entries[index];
+          
+                  if (entry) {
+                      if (e.target.classList.contains('raffle-name-input')) {
+                          entry.name = e.target.value.trim();
+                      } else if (e.target.classList.contains('raffle-contact-input')) {
+                          entry.contact = e.target.value.trim();
+                      }
+                  }
+                  // No need to call updateCart() here - just storing data
+              }
+          });
+          
+          // --- END FIXED RAFFLE TICKET LOGIC ---
+  
         // --- DONATION LOGIC ---
 
         function updateDonationFields() {
