@@ -926,7 +926,8 @@
 
         // --- RAFFLE TICKET LOGIC ---
 
-        function updateRaffleFields() {
+  /* updating updateRaffleFileds() function
+    function updateRaffleFields() {
     const type = DOM.raffleType.value;
     const isIndividual = type === 'individual';
     const isBook = type === 'book';
@@ -1047,7 +1048,91 @@
                 }
             }
         });
-
+      */
+      function updateRaffleFields() {
+        const type = DOM.raffleType.value;
+        const isIndividual = type === 'individual';
+        const isBook = type === 'book';
+        
+        // Toggle visibility of the correct input sections
+        DOM.raffleIndividualOptions.style.display = isIndividual ? 'block' : 'none';
+        DOM.raffleBookOptions.style.display = isBook ? 'block' : 'none';
+    
+        // Ensure the cart object is initialized before use (THE FIX)
+        if (!cart.raffleTickets) {
+            cart.raffleTickets = { 
+                type: '', 
+                individualTickets: 0, 
+                books: 0, 
+                totalQuantity: 0, 
+                totalPrice: 0, 
+                entries: [] 
+            };
+        }
+    
+        // Get selected quantity
+        const qty = isIndividual 
+            ? (parseInt(DOM.raffleQuantityIndividual.value) || 0) 
+            : isBook 
+            ? (parseInt(DOM.raffleQuantityBook.value) || 0) 
+            : 0;
+    
+        let totalEntries = 0;
+        let totalTickets = 0;
+        let html = '';
+        
+        // Reset entries array (now safe)
+        cart.raffleTickets.entries = []; 
+        
+        if (isIndividual) {
+            totalEntries = qty;
+            totalTickets = qty;
+        } else if (isBook) {
+            totalEntries = qty;
+            totalTickets = qty * 5;
+        }
+    
+        // Generate dynamic fields for name/contact
+        for (let i = 0; i < totalEntries; i++) {
+            const ticketsPerEntry = isBook ? 5 : 1;
+            const entryLabel = isBook ? `Book #${i + 1} (${ticketsPerEntry} Tickets)` : `Ticket #${i + 1}`;
+            
+            html += `
+                <div class="horse-entry">
+                    <div class="info-box"><p>🎫 ${entryLabel}</p></div>
+                    <div class="form-group">
+                        <label class="form-label">Owner's Full Name<span class="required">*</span></label>
+                        <input type="text" class="form-input raffle-name-input" id="raffle-name-${i}" placeholder="Name for Ticket(s)">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Owner's Contact (Email/Phone)<span class="required">*</span></label>
+                        <input type="text" class="form-input raffle-contact-input" id="raffle-contact-${i}" placeholder="Email or Phone">
+                    </div>
+                </div>
+            `;
+            // Store entry structure
+            cart.raffleTickets.entries.push({ 
+                number: i + 1, name: '', contact: '', 
+                tickets: ticketsPerEntry
+            });
+        }
+    
+        DOM.raffleEntriesContainer.innerHTML = html;
+        
+        // Update cart object with final values
+        cart.raffleTickets.type = type;
+        cart.raffleTickets.individualTickets = isIndividual ? qty : 0;
+        cart.raffleTickets.books = isBook ? qty : 0;
+        cart.raffleTickets.totalQuantity = totalTickets;
+        cart.raffleTickets.totalPrice = (isIndividual ? qty * PRICES.RAFFLE_INDIVIDUAL : isBook ? qty * PRICES.RAFFLE_BOOK : 0);
+        
+        // Bind event listeners to the new input fields
+        DOM.raffleEntriesContainer.querySelectorAll('.raffle-name-input, .raffle-contact-input').forEach(input => {
+            input.addEventListener('input', () => validateForm(false)); // Don't show alert on input
+        });
+        
+        updateCart();
+    }
 
         // --- DONATION LOGIC ---
 
