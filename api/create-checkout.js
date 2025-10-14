@@ -162,10 +162,13 @@ export default async function handler(req, res) {
       cancel_url: `${origin}/cancel.html`,
       customer_email: data.purchaser.email,
       metadata: {
-        purchaserName: `${data.purchaser.firstName} ${data.purchaser.lastName}`,
+        purchaserName: `${data.purchaser.firstName} ${data.purchurer.lastName}`,
         dancerFamily: data.purchaser.dancerFamily,
         phone: data.purchaser.phone,
-        orderData: JSON.stringify(data) 
+        // --- FIX: Metadata size limit ---
+        // Removed the orderData: JSON.stringify(data) field, as it exceeded 500 characters.
+        // If full order details are needed later, they should be stored in a database (like Firestore) 
+        // and only the order ID should be passed here.
       }
     });
 
@@ -176,8 +179,11 @@ export default async function handler(req, res) {
     console.error('Stripe error:', error);
     // Return error using Vercel's standard response method
     if (error.type === 'StripeInvalidRequestError' && error.param) {
+      // Updated error message to include specific reason from the logs
+      const customError = error.param === 'metadata' ? 'Metadata value exceeded Stripe\'s 500 character limit.' : `Line item parameter issue (${error.param}). Please ensure all item quantities are greater than zero.`;
+      
       return res.status(500).json({ 
-        error: `Checkout validation error: Line item parameter issue (${error.param}). Please ensure all item quantities are greater than zero.`,
+        error: `Checkout validation error: ${customError}`,
         stripe_param: error.param
       });
     }
