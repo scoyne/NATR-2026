@@ -1577,8 +1577,7 @@ DOM.checkoutBtn.addEventListener('click', async function() {
 
         // Send data to Netlify function
         console.log('🌐 Calling Netlify function...');
-        
-        const response = await fetch('/.netlify/functions/create-checkout', {
+        const response = await fetch('/api/create-checkout', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
