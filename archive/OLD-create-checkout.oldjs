@@ -1,0 +1,461 @@
+// api/create-checkout.js - MERGED VERSION
+// Combines your working Vercel code + Supabase database integration
+
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const { createClient } = require('@supabase/supabase-js');
+
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
+
+// Helper function to generate unique 6-digit raffle ticket number
+function generateRaffleTicketNumber() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Helper function to generate unique raffle numbers (ensures no duplicates)
+async function generateUniqueRaffleNumbers(count) {
+  const numbers = [];
+  const attempts = count * 10;
+  let attemptsUsed = 0;
+
+  while (numbers.length < count && attemptsUsed < attempts) {
+    const num = generateRaffleTicketNumber();
+    
+    const { data, error } = await supabase
+      .from('raffle_tickets')
+      .select('ticket_number')
+      .eq('ticket_number', num)
+      .single();
+    
+    if (!data && !numbers.includes(num)) {
+      numbers.push(num);
+    }
+    attemptsUsed++;
+  }
+
+  if (numbers.length < count) {
+    throw new Error('Could not generate enough unique raffle ticket numbers');
+  }
+
+  return numbers;
+}
+
+export default async function handler(req, res) {
+  // Only allow POST requests (Vercel's req/res pattern)
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    // Vercel parses JSON body automatically
+    const data = req.body;
+    
+    // Validate request body
+    if (!data || !data.cart || !data.purchaser) {
+      return res.status(400).json({ error: 'Invalid or missing cart data in request body.' });
+    }
+
+    console.log('📦 Received purchase data');
+    
+    // Build line items for Stripe
+    const lineItems = [];
+
+    // Event Tickets - Use parseInt() for robustness
+    const eventTicketQty = data.cart.eventTickets ? parseInt(data.cart.eventTickets.quantity, 10) : 0;
+    if (eventTicketQty > 0) {
+      lineItems.push({
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: 'Event Tickets',
+            description: `${eventTicketQty} tickets for Night at the Races`
+          },
+          unit_amount: 2500,
+        },
+        quantity: eventTicketQty
+      });
+    }
+
+    // Horses - Use parseInt() for robustness
+    const horseQty = data.cart.horses ? parseInt(data.cart.horses.quantity, 10) : 0;
+    if (horseQty > 0) { 
+      lineItems.push({
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: 'Horse Sponsorships',
+            description: `${horseQty} horse sponsorships`
+          },
+          unit_amount: 2500,
+        },
+        quantity: horseQty
+      });
+    }
+
+    // Program Ads
+    if (data.cart.programAds && data.cart.programAds.length > 0) {
+      data.cart.programAds.forEach(ad => {
+        if (ad.price > 0) {
+          const sizeLabel = 
+            ad.price === 25 ? (ad.sizeLabel || 'Business Card') :
+            ad.price === 50 ? '½ Page' :
+            ad.price === 100 ? 'Full Page' :
+            ad.price === 120 ? 'Full Page + Sponsored Race' : 'Program Ad';
+          
+          lineItems.push({
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: `Program Book Ad - ${sizeLabel}`,
+                description: `Business: ${ad.businessName || 'Program Ad #' + ad.adNumber}`
+              },
+              unit_amount: ad.price * 100
+            },
+            quantity: 1
+          });
+        }
+      });
+    }
+
+    // Raffle Tickets - Use parseInt() for robustness
+    if (data.cart.raffleTickets) {
+      const price = data.cart.raffleTickets.type === 'individual' ? 5 : 20;
+      
+      let raffleQtyRaw;
+      if (data.cart.raffleTickets.type === 'individual') {
+        raffleQtyRaw = data.cart.raffleTickets.individualTickets || data.cart.raffleTickets.quantity;
+      } else {
+        raffleQtyRaw = data.cart.raffleTickets.books || data.cart.raffleTickets.bookQuantity;
+      }
+      
+      const finalRaffleQty = parseInt(raffleQtyRaw, 10) || 0;
+      
+      if (finalRaffleQty > 0) {
+        lineItems.push({
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Raffle Tickets',
+              description: data.cart.raffleTickets.type === 'individual'
+                ? `${finalRaffleQty} individual tickets`
+                : `${finalRaffleQty} books (${finalRaffleQty * 5} tickets)`
+            },
+            unit_amount: price * 100
+          },
+          quantity: finalRaffleQty
+        });
+      }
+    }
+
+    // Cash Donation
+    if (data.cart.cashDonation && data.cart.cashDonation.amount > 0) {
+      lineItems.push({
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: 'Cash Donation',
+            description: 'Tax-deductible donation to Brady Campbell Irish Dance School'
+          },
+          unit_amount: Math.round(data.cart.cashDonation.amount * 100)
+        },
+        quantity: 1
+      });
+    }
+    
+    // Also check old donation format (data.cart.donation.type === 'cash')
+    if (data.cart.donation && data.cart.donation.type === 'cash' && data.cart.donation.amount > 0) {
+      lineItems.push({
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: 'Cash Donation',
+            description: 'Tax-deductible donation to Brady Campbell Irish Dance School'
+          },
+          unit_amount: Math.round(data.cart.donation.amount * 100)
+        },
+        quantity: 1
+      });
+    }
+
+    // Processing Fee
+    if (data.totals.coveringFees && data.totals.processingFee > 0) {
+      lineItems.push({
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: 'Processing Fee',
+            description: 'Credit card processing fee (2.9% + $0.30)'
+          },
+          unit_amount: Math.round(data.totals.processingFee * 100)
+        },
+        quantity: 1
+      });
+    }
+
+    // Ensure cart has items
+    if (lineItems.length === 0) {
+      return res.status(400).json({ error: 'Cart is empty. Cannot create a checkout session without items.' });
+    }
+
+    // Calculate origin dynamically
+    const origin = req.headers.origin || `https://${req.headers.host}`;
+
+    console.log('💳 Creating Stripe checkout session with', lineItems.length, 'line items');
+
+    // Create Stripe Checkout Session
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: lineItems,
+      mode: 'payment',
+      success_url: `${origin}/success.html?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/cancel.html`,
+      customer_email: data.purchaser.email,
+      metadata: {
+        purchaserName: `${data.purchaser.firstName} ${data.purchaser.lastName}`,
+        dancerFamily: data.purchaser.dancerFamily,
+        phone: data.purchaser.phone,
+        has_tickets: data.cart.eventTickets ? 'yes' : 'no',
+        has_horses: horseQty > 0 ? 'yes' : 'no',
+        has_ads: data.cart.programAds?.length > 0 ? 'yes' : 'no',
+        has_raffle: data.cart.raffleTickets ? 'yes' : 'no',
+        has_donation: data.cart.cashDonation || data.cart.donation ? 'yes' : 'no'
+      }
+    });
+
+    console.log('✅ Stripe session created:', session.id);
+
+    // ===========================================
+    // SAVE TO SUPABASE
+    // ===========================================
+
+    console.log('💾 Saving order to Supabase...');
+
+    // 1. CREATE ORDER RECORD
+    const { data: orderData, error: orderError } = await supabase
+      .from('orders')
+      .insert({
+        stripe_session_id: session.id,
+        purchaser_first_name: data.purchaser.firstName,
+        purchaser_last_name: data.purchaser.lastName,
+        purchaser_email: data.purchaser.email,
+        purchaser_phone: data.purchaser.phone,
+        dancer_family: data.purchaser.dancerFamily,
+        subtotal: data.totals.subtotal,
+        processing_fee: data.totals.processingFee || 0,
+        total_paid: data.totals.finalTotal,
+        covered_fees: data.totals.coveringFees,
+        payment_status: 'pending'
+      })
+      .select()
+      .single();
+
+    if (orderError) {
+      console.error('❌ Error creating order:', orderError);
+      // Still return Stripe URL even if DB save fails - order will be in Stripe
+      return res.status(200).json({ 
+        url: session.url,
+        warning: 'Order created in Stripe but database save failed'
+      });
+    }
+
+    const orderId = orderData.order_id;
+    console.log('✅ Order created with ID:', orderId);
+
+    // 2. SAVE EVENT TICKETS
+    if (eventTicketQty > 0) {
+      await supabase
+        .from('event_tickets')
+        .insert({
+          order_id: orderId,
+          quantity: eventTicketQty,
+          table_name: data.cart.eventTickets.tableName || null,
+          price_per_ticket: 25,
+          total_price: eventTicketQty * 25
+        })
+        .then(() => console.log('✅ Event tickets saved'))
+        .catch(err => console.error('❌ Error saving event tickets:', err));
+    }
+
+    // 3. SAVE HORSES
+    if (data.cart.horses && data.cart.horses.entries && data.cart.horses.entries.length > 0) {
+      const horseInserts = data.cart.horses.entries
+        .filter(horse => horse.name && horse.owner) // Only save horses with names
+        .map(horse => ({
+          order_id: orderId,
+          horse_name: horse.name,
+          owner_name: horse.owner,
+          price: 25
+        }));
+
+      if (horseInserts.length > 0) {
+        await supabase
+          .from('horses')
+          .insert(horseInserts)
+          .then(() => console.log('✅ Horses saved:', horseInserts.length))
+          .catch(err => console.error('❌ Error saving horses:', err));
+      }
+    }
+
+    // 4. SAVE PROGRAM ADS
+    if (data.cart.programAds && data.cart.programAds.length > 0) {
+      const adInserts = data.cart.programAds
+        .filter(ad => ad.price > 0 && ad.businessName)
+        .map(ad => ({
+          order_id: orderId,
+          business_name: ad.businessName,
+          ad_size: ad.sizeLabel,
+          price: ad.price,
+          design_option: ad.designOption,
+          instructions: ad.instructions || null
+        }));
+
+      if (adInserts.length > 0) {
+        await supabase
+          .from('program_ads')
+          .insert(adInserts)
+          .then(() => console.log('✅ Program ads saved:', adInserts.length))
+          .catch(err => console.error('❌ Error saving program ads:', err));
+      }
+    }
+
+    // 5. GENERATE & SAVE RAFFLE TICKETS
+    if (data.cart.raffleTickets && data.cart.raffleTickets.entries && data.cart.raffleTickets.entries.length > 0) {
+      console.log('🎫 Generating raffle ticket numbers...');
+      
+      const totalTicketsNeeded = data.cart.raffleTickets.totalQuantity;
+      
+      try {
+        const raffleNumbers = await generateUniqueRaffleNumbers(totalTicketsNeeded);
+        console.log('✅ Generated', raffleNumbers.length, 'unique raffle numbers');
+
+        let numberIndex = 0;
+        const raffleInserts = [];
+
+        for (const entry of data.cart.raffleTickets.entries) {
+          if (!entry.name || !entry.contact) continue; // Skip entries without name/contact
+          
+          const ticketsInEntry = entry.tickets;
+          const bookId = ticketsInEntry === 5 ? crypto.randomUUID() : null;
+
+          for (let i = 0; i < ticketsInEntry; i++) {
+            raffleInserts.push({
+              order_id: orderId,
+              ticket_number: raffleNumbers[numberIndex++],
+              owner_name: entry.name,
+              owner_contact: entry.contact,
+              ticket_type: data.cart.raffleTickets.type,
+              book_id: bookId
+            });
+          }
+        }
+
+        if (raffleInserts.length > 0) {
+          await supabase
+            .from('raffle_tickets')
+            .insert(raffleInserts)
+            .then(() => console.log('✅ Raffle tickets saved:', raffleInserts.length))
+            .catch(err => console.error('❌ Error saving raffle tickets:', err));
+        }
+      } catch (raffleError) {
+        console.error('❌ Error generating raffle numbers:', raffleError);
+      }
+    }
+
+    // 6. SAVE DONATIONS
+    if (data.cart.cashDonation || data.cart.donation) {
+      const donationInsert = {
+        order_id: orderId
+      };
+
+      if (data.cart.cashDonation) {
+        donationInsert.donation_type = 'cash';
+        donationInsert.amount = data.cart.cashDonation.amount;
+        donationInsert.purpose = data.cart.cashDonation.purpose || 'General Fund';
+        donationInsert.recognition_name = data.cart.cashDonation.recognition || null;
+      } else if (data.cart.donation) {
+        if (data.cart.donation.type === 'cash') {
+          donationInsert.donation_type = 'cash';
+          donationInsert.amount = data.cart.donation.amount;
+          donationInsert.purpose = data.cart.donation.purpose || 'General Fund';
+        } else {
+          donationInsert.donation_type = 'basket';
+          donationInsert.basket_description = data.cart.donation.description;
+          donationInsert.basket_value = data.cart.donation.valueLabel;
+        }
+        donationInsert.recognition_name = data.cart.donation.recognition || null;
+      }
+
+      await supabase
+        .from('donations')
+        .insert(donationInsert)
+        .then(() => console.log('✅ Donation saved'))
+        .catch(err => console.error('❌ Error saving donation:', err));
+    }
+
+    // 7. UPDATE INVENTORY COUNTS
+    console.log('📊 Updating inventory...');
+
+    if (eventTicketQty > 0) {
+      await supabase
+        .from('inventory')
+        .update({ 
+          total_sold: supabase.raw(`total_sold + ${eventTicketQty}`),
+          last_updated: new Date().toISOString()
+        })
+        .eq('item_type', 'event_tickets')
+        .catch(err => console.error('Error updating ticket inventory:', err));
+    }
+
+    if (horseQty > 0) {
+      await supabase
+        .from('inventory')
+        .update({ 
+          total_sold: supabase.raw(`total_sold + ${horseQty}`),
+          last_updated: new Date().toISOString()
+        })
+        .eq('item_type', 'horses')
+        .catch(err => console.error('Error updating horse inventory:', err));
+    }
+
+    if (data.cart.raffleTickets && data.cart.raffleTickets.totalQuantity > 0) {
+      await supabase
+        .from('inventory')
+        .update({ 
+          total_sold: supabase.raw(`total_sold + ${data.cart.raffleTickets.totalQuantity}`),
+          last_updated: new Date().toISOString()
+        })
+        .eq('item_type', 'raffle_tickets')
+        .catch(err => console.error('Error updating raffle inventory:', err));
+    }
+
+    console.log('✅ Inventory updated');
+    console.log('🎉 All data saved to Supabase!');
+
+    // Return success
+    return res.status(200).json({ 
+      url: session.url,
+      orderId: orderId
+    });
+
+  } catch (error) {
+    console.error('❌ Checkout error:', error);
+    
+    // Enhanced error handling from your version
+    if (error.type === 'StripeInvalidRequestError' && error.param) {
+      const customError = error.param === 'metadata' 
+        ? 'Metadata value exceeded Stripe\'s 500 character limit.' 
+        : `Line item parameter issue (${error.param}). Please ensure all item quantities are greater than zero.`;
+      
+      return res.status(500).json({ 
+        error: `Checkout validation error: ${customError}`,
+        stripe_param: error.param
+      });
+    }
+    
+    return res.status(500).json({ error: error.message });
+  }
+}
