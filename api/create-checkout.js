@@ -162,7 +162,7 @@ export default async function handler(req, res) {
       cancel_url: `${origin}/cancel.html`,
       customer_email: data.purchaser.email,
       metadata: {
-        purchaserName: `${data.purchaser.firstName} ${data.purchurer.lastName}`,
+        purchaserName: `${data.purchaser.firstName} ${data.purchaser.lastName}`, // <-- CORRECTED TYPO HERE
         dancerFamily: data.purchaser.dancerFamily,
         phone: data.purchaser.phone,
         // --- FIX: Metadata size limit ---
