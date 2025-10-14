@@ -1,7 +1,5 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
-// Vercel serverless functions require the handler to be the default export.
-// They use an Express-like (req, res) signature, rather than the Lambda (event) signature.
 export default async function handler(req, res) {
 
   // Only allow POST requests (using Vercel's req/res objects)
@@ -13,7 +11,6 @@ export default async function handler(req, res) {
   // --- BEGIN Checkout Logic ---
   try {
     // Vercel usually parses the JSON body automatically into req.body for POST requests.
-    // If the client side is sending JSON with the correct Content-Type header, req.body should be an object.
     const data = req.body;
     
     // Check if the body parsing was successful and data is available
@@ -23,38 +20,44 @@ export default async function handler(req, res) {
     
     // Build line items for Stripe
     const lineItems = [];
-
+    
+    // --- FIX: Using parseInt() on variable quantities for robustness ---
+    
     // Event Tickets
-    if (data.cart.eventTickets) {
+    // Use parseInt() to ensure quantity is a clean integer
+    const eventTicketQty = data.cart.eventTickets ? parseInt(data.cart.eventTickets.quantity, 10) : 0;
+    if (eventTicketQty > 0) {
       lineItems.push({
         price_data: {
           currency: 'usd',
           product_data: {
             name: 'Event Tickets',
-            description: `${data.cart.eventTickets.quantity} tickets for Night at the Races`
+            description: `${eventTicketQty} tickets for Night at the Races`
           },
           unit_amount: 2500, // $25.00 in cents
         },
-        quantity: data.cart.eventTickets.quantity
+        quantity: eventTicketQty
       });
     }
 
-    // Horses
-    if (data.cart.horses) {
+    // Horses (LINE ITEMS [1] IF TICKETS EXIST)
+    // Use parseInt() to ensure quantity is a clean integer
+    const horseQty = data.cart.horses ? parseInt(data.cart.horses.quantity, 10) : 0;
+    if (horseQty > 0) { 
       lineItems.push({
         price_data: {
           currency: 'usd',
           product_data: {
             name: 'Horse Sponsorships',
-            description: `${data.cart.horses.quantity} horse sponsorships`
+            description: `${horseQty} horse sponsorships`
           },
           unit_amount: 2500, // $25.00 in cents
         },
-        quantity: data.cart.horses.quantity
+        quantity: horseQty
       });
     }
 
-    // Program Ads
+    // Program Ads (No change needed here as quantity is always 1)
     if (data.cart.programAds && data.cart.programAds.length > 0) {
       data.cart.programAds.forEach(ad => {
         if (ad.price > 0) {
@@ -82,26 +85,36 @@ export default async function handler(req, res) {
     // Raffle Tickets
     if (data.cart.raffleTickets) {
       const price = data.cart.raffleTickets.type === 'individual' ? 5 : 20;
-      const qty = data.cart.raffleTickets.type === 'individual' 
-        ? data.cart.raffleTickets.quantity 
-        : data.cart.raffleTickets.bookQuantity;
       
-      lineItems.push({
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: 'Raffle Tickets',
-            description: data.cart.raffleTickets.type === 'individual'
-              ? `${qty} individual tickets`
-              : `${qty} books (${qty * 5} tickets)`
-          },
-          unit_amount: price * 100
-        },
-        quantity: qty
-      });
+      let raffleQtyRaw;
+      if (data.cart.raffleTickets.type === 'individual') {
+          raffleQtyRaw = data.cart.raffleTickets.quantity;
+      } else {
+          raffleQtyRaw = data.cart.raffleTickets.bookQuantity;
+      }
+      
+      // Use parseInt() to ensure quantity is a clean integer
+      const finalRaffleQty = parseInt(raffleQtyRaw, 10) || 0; 
+      
+      // Check if the calculated quantity (finalRaffleQty) is valid for adding the item
+      if (finalRaffleQty > 0) {
+          lineItems.push({
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: 'Raffle Tickets',
+                description: data.cart.raffleTickets.type === 'individual'
+                  ? `${finalRaffleQty} individual tickets`
+                  : `${finalRaffleQty} books (${finalRaffleQty * 5} tickets)`
+              },
+              unit_amount: price * 100
+            },
+            quantity: finalRaffleQty
+          });
+      }
     }
 
-    // Cash Donation
+    // Cash Donation (Quantity is always 1)
     if (data.cart.donation && data.cart.donation.type === 'cash' && data.cart.donation.amount > 0) {
       lineItems.push({
         price_data: {
@@ -112,11 +125,11 @@ export default async function handler(req, res) {
           },
           unit_amount: Math.round(data.cart.donation.amount * 100)
         },
-        quantity: 1
+        quantity: 1 
       });
     }
 
-    // Add processing fee if customer is covering it
+    // Add processing fee if customer is covering it (Quantity is always 1)
     if (data.totals.coveringFees && data.totals.processingFee > 0) {
       lineItems.push({
         price_data: {
@@ -131,8 +144,12 @@ export default async function handler(req, res) {
       });
     }
     
+    // FINAL CHECK: Ensure there is at least one item before creating the session
+    if (lineItems.length === 0) {
+        return res.status(400).json({ error: 'Cart is empty. Cannot create a checkout session without items.' });
+    }
+
     // Calculate the correct origin dynamically for success/cancel URLs
-    // We prioritize req.headers.origin for security, falling back to constructing the URL
     const origin = req.headers.origin || `https://${req.headers.host}`;
 
 
@@ -141,7 +158,6 @@ export default async function handler(req, res) {
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment',
-      // Updated to use the dynamic origin variable
       success_url: `${origin}/success.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/cancel.html`,
       customer_email: data.purchaser.email,
@@ -149,7 +165,7 @@ export default async function handler(req, res) {
         purchaserName: `${data.purchaser.firstName} ${data.purchaser.lastName}`,
         dancerFamily: data.purchaser.dancerFamily,
         phone: data.purchaser.phone,
-        orderData: JSON.stringify(data)
+        orderData: JSON.stringify(data) 
       }
     });
 
@@ -159,6 +175,13 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error('Stripe error:', error);
     // Return error using Vercel's standard response method
+    if (error.type === 'StripeInvalidRequestError' && error.param) {
+      return res.status(500).json({ 
+        error: `Checkout validation error: Line item parameter issue (${error.param}). Please ensure all item quantities are greater than zero.`,
+        stripe_param: error.param
+      });
+    }
+    
     return res.status(500).json({ error: error.message });
   }
 }
