@@ -29,7 +29,7 @@
           max-width: 900px; 
           margin: 0 auto; 
           display: grid;
-          /* grid-template-columns: 2fr 1fr; /* Main content and Cart side-by-side */
+          /*grid-template-columns: 2fr 1fr; /* Main content and Cart side-by-side */
           gap: 30px;
       }
       
@@ -957,108 +957,121 @@
             return re.test(String(email).toLowerCase());
         }
 
-        function validateForm() {
-            let isValid = true;
-            let firstErrorElement = null;
+        function validateForm() {
+            let isValid = true;
+            let firstErrorElement = null;
 
-            // Simple required fields (Name, Email, Phone, Family)
-            const requiredFields = [DOM.firstName, DOM.lastName, DOM.email, DOM.phone, DOM.dancerFamily];
-            requiredFields.forEach(field => {
-                if (field.value.trim() === '' || (field.type === 'email' && !validateEmail(field.value))) {
-                    field.style.borderColor = '#ff5722';
-                    if (!firstErrorElement) firstErrorElement = field;
-                    isValid = false;
-                } else {
-                    field.style.borderColor = '';
-                }
-            });
+            // Clear all error styling
+            document.querySelectorAll('.form-input, .form-select').forEach(field => {
+                field.style.borderColor = '';
+            });
 
-            // Conditional validation
-            
-            // Event Tickets: Table name check
-            if (cart.eventTickets && cart.eventTickets.quantity >= 8 && DOM.tableName.value.trim() === '') {
-                DOM.tableName.style.borderColor = '#ff5722';
-                if (!firstErrorElement) firstErrorElement = DOM.tableName;
-                isValid = false;
-            } else if (DOM.tableName) {
-                 DOM.tableName.style.borderColor = '';
-            }
+            // Required fields
+            const requiredFields = [DOM.firstName, DOM.lastName, DOM.email, DOM.phone, DOM.dancerFamily];
+            requiredFields.forEach(field => {
+                if (!field.value || field.value.trim() === '' || (field.type === 'email' && !validateEmail(field.value))) {
+                    field.style.borderColor = '#ff5722';
+                    if (!firstErrorElement) firstErrorElement = field;
+                    isValid = false;
+                }
+            });
 
-            // Horse Sponsorships: Horse names/owners check
-            if (cart.horses.quantity > 0) {
-                cart.horses.entries.forEach((entry, index) => {
-                    const horseNameField = document.getElementById(`horse-name-${index}`);
-                    const ownerNameField = document.getElementById(`owner-name-${index}`);
-                    
-                    if (horseNameField.value.trim() === '' || ownerNameField.value.trim() === '') {
-                        if (horseNameField.value.trim() === '') horseNameField.style.borderColor = '#ff5722'; else horseNameField.style.borderColor = '';
-                        if (ownerNameField.value.trim() === '') ownerNameField.style.borderColor = '#ff5722'; else ownerNameField.style.borderColor = '';
-                        if (!firstErrorElement) firstErrorElement = horseNameField || ownerNameField;
-                        isValid = false;
-                    } else {
-                        horseNameField.style.borderColor = '';
-                        ownerNameField.style.borderColor = '';
-                    }
-                });
-            }
+            // Table name for 8+ tickets
+            if (cart.eventTickets && cart.eventTickets.quantity >= 8) {
+                if (!DOM.tableName.value || DOM.tableName.value.trim() === '') {
+                    DOM.tableName.style.borderColor = '#ff5722';
+                    if (!firstErrorElement) firstErrorElement = DOM.tableName;
+                    isValid = false;
+                }
+            }
 
-            // Program Ads: Logic check
-            if (cart.programAds.length > 0) {
-                 cart.programAds.forEach((ad, index) => {
-                    const adContainer = document.getElementById(`ad-container-${index}`);
-                    const adSize = adContainer.querySelector('.ad-size-select');
-                    const adBusinessName = adContainer.querySelector('.ad-business-name');
-                    const adDesignOption = adContainer.querySelector('.ad-design-option');
-                    
-                    if (adSize.value === '' || adBusinessName.value.trim() === '' || adDesignOption.value === '') {
-                        adSize.style.borderColor = adSize.value === '' ? '#ff5722' : '';
-                        adBusinessName.style.borderColor = adBusinessName.value.trim() === '' ? '#ff5722' : '';
-                        adDesignOption.style.borderColor = adDesignOption.value === '' ? '#ff5722' : '';
-                        if (!firstErrorElement) firstErrorElement = adSize || adBusinessName || adDesignOption;
-                        isValid = false;
-                    } else {
-                        adSize.style.borderColor = '';
-                        adBusinessName.style.borderColor = '';
-                        adDesignOption.style.borderColor = '';
-                    }
-                });
-            }
+            // Horse names - FIX: Only validate visible fields
+            if (cart.horses && cart.horses.quantity > 0) {
+                const horseNameInputs = document.querySelectorAll('.horse-name-input');
+                const ownerNameInputs = document.querySelectorAll('.owner-name-input');
+                
+                horseNameInputs.forEach((horseField, index) => {
+                    const ownerField = ownerNameInputs[index];
+                    
+                    if (horseField && horseField.value.trim() === '') {
+                        horseField.style.borderColor = '#ff5722';
+                        if (!firstErrorElement) firstErrorElement = horseField;
+                        isValid = false;
+                    }
+                    
+                    if (ownerField && ownerField.value.trim() === '') {
+                        ownerField.style.borderColor = '#ff5722';
+                        if (!firstErrorElement) firstErrorElement = ownerField;
+                        isValid = false;
+                    }
+                });
+            }
 
-            // Cash Donation Check
-            if (DOM.donationType.value === 'cash' && (parseFloat(DOM.cashDonationAmount.value) || 0) <= 0) {
-                 DOM.cashDonationAmount.style.borderColor = '#ff5722';
-                 if (!firstErrorElement) firstErrorElement = DOM.cashDonationAmount;
-                 isValid = false;
-            } else if (DOM.cashDonationAmount) {
-                 DOM.cashDonationAmount.style.borderColor = '';
-            }
-            
-            // Raffle Tickets check (complex: needs name/contact for every ticket/book)
-            if (cart.raffleTickets && cart.raffleTickets.entries.length > 0) {
-                cart.raffleTickets.entries.forEach((entry, index) => {
-                    const ownerNameField = document.getElementById(`raffle-name-${index}`);
-                    const contactField = document.getElementById(`raffle-contact-${index}`);
-                    
-                    if (ownerNameField.value.trim() === '' || contactField.value.trim() === '') {
-                        if (ownerNameField.value.trim() === '') ownerNameField.style.borderColor = '#ff5722'; else ownerNameField.style.borderColor = '';
-                        if (contactField.value.trim() === '') contactField.style.borderColor = '#ff5722'; else contactField.style.borderColor = '';
-                        if (!firstErrorElement) firstErrorElement = ownerNameField || contactField;
-                        isValid = false;
-                    } else {
-                        ownerNameField.style.borderColor = '';
-                        contactField.style.borderColor = '';
-                    }
-                });
-            }
+            // Program ads
+            if (cart.programAds && cart.programAds.length > 0) {
+                cart.programAds.forEach((ad, index) => {
+                    const adContainer = document.getElementById(`ad-container-${index}`);
+                    if (!adContainer) return;
+                    
+                    const adSize = adContainer.querySelector('.ad-size-select');
+                    const adBusiness = adContainer.querySelector('.ad-business-name');
+                    const adDesign = adContainer.querySelector('.ad-design-option');
+                    
+                    if (adSize && adSize.value === '') {
+                        adSize.style.borderColor = '#ff5722';
+                        if (!firstErrorElement) firstErrorElement = adSize;
+                        isValid = false;
+                    }
+                    if (adBusiness && adBusiness.value.trim() === '') {
+                        adBusiness.style.borderColor = '#ff5722';
+                        if (!firstErrorElement) firstErrorElement = adBusiness;
+                        isValid = false;
+                    }
+                    if (adDesign && adDesign.value === '') {
+                        adDesign.style.borderColor = '#ff5722';
+                        if (!firstErrorElement) firstErrorElement = adDesign;
+                        isValid = false;
+                    }
+                });
+            }
 
-            if (!isValid && firstErrorElement) {
-                firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                // Changed from alert() to a temporary visual cue as per best practices
-                // alert('Please correct the highlighted fields before proceeding.');
-            }
+            // Cash donation
+            if (DOM.donationType.value === 'cash' && (parseFloat(DOM.cashDonationAmount.value) || 0) <= 0) {
+                DOM.cashDonationAmount.style.borderColor = '#ff5722';
+                if (!firstErrorElement) firstErrorElement = DOM.cashDonationAmount;
+                isValid = false;
+            }
+            
+            // Raffle tickets
+            if (cart.raffleTickets && cart.raffleTickets.entries && cart.raffleTickets.entries.length > 0) {
+                const raffleNames = document.querySelectorAll('.raffle-name-input');
+                const raffleContacts = document.querySelectorAll('.raffle-contact-input');
+                
+                raffleNames.forEach((nameField, index) => {
+                    const contactField = raffleContacts[index];
+                    
+                    if (nameField && nameField.value.trim() === '') {
+                        nameField.style.borderColor = '#ff5722';
+                        if (!firstErrorElement) firstErrorElement = nameField;
+                        isValid = false;
+                    }
+                    if (contactField && contactField.value.trim() === '') {
+                        contactField.style.borderColor = '#ff5722';
+                        if (!firstErrorElement) firstErrorElement = contactField;
+                        isValid = false;
+                    }
+                });
+            }
 
-            return isValid;
-        }
+            if (!isValid && firstErrorElement) {
+                firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            return isValid;
+        }
+
+        function validatePhone(phone) {
+            const re = /^\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/;
 
 
         // --- HORSE LOGIC ---

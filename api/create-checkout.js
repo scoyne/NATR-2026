@@ -1,30 +1,26 @@
+// api/create-checkout.js
+// Creates Stripe session - NO database save (webhook handles that)
+
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 export default async function handler(req, res) {
-
-  // Only allow POST requests (using Vercel's req/res objects)
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // --- BEGIN Checkout Logic ---
   try {
-    // Vercel usually parses the JSON body automatically into req.body for POST requests.
     const data = req.body;
     
-    // Check if the body parsing was successful and data is available
     if (!data || !data.cart || !data.purchaser) {
-        return res.status(400).json({ error: 'Invalid or missing cart data in request body.' });
+      return res.status(400).json({ error: 'Invalid cart data' });
     }
+
+    console.log('📦 Creating checkout for:', data.purchaser.email);
     
-    // Build line items for Stripe
     const lineItems = [];
-    
-    // --- FIX: Using parseInt() on variable quantities for robustness ---
-    
+
     // Event Tickets
-    // Use parseInt() to ensure quantity is a clean integer
     const eventTicketQty = data.cart.eventTickets ? parseInt(data.cart.eventTickets.quantity, 10) : 0;
     if (eventTicketQty > 0) {
       lineItems.push({
@@ -34,14 +30,13 @@ export default async function handler(req, res) {
             name: 'Event Tickets',
             description: `${eventTicketQty} tickets for Night at the Races`
           },
-          unit_amount: 2500, // $25.00 in cents
+          unit_amount: 2500,
         },
         quantity: eventTicketQty
       });
     }
 
-    // Horses (LINE ITEMS [1] IF TICKETS EXIST)
-    // Use parseInt() to ensure quantity is a clean integer
+    // Horses
     const horseQty = data.cart.horses ? parseInt(data.cart.horses.quantity, 10) : 0;
     if (horseQty > 0) { 
       lineItems.push({
@@ -51,30 +46,30 @@ export default async function handler(req, res) {
             name: 'Horse Sponsorships',
             description: `${horseQty} horse sponsorships`
           },
-          unit_amount: 2500, // $25.00 in cents
+          unit_amount: 2500,
         },
         quantity: horseQty
       });
     }
 
-    // Program Ads (No change needed here as quantity is always 1)
+    // Program Ads
     if (data.cart.programAds && data.cart.programAds.length > 0) {
       data.cart.programAds.forEach(ad => {
         if (ad.price > 0) {
-          const sizeLabel = 
-            ad.price === 25 ? 'Business Card' :
-            ad.price === 50 ? '½ Page' :
-            ad.price === 100 ? 'Full Page' :
-            ad.price === 120 ? 'Full Page + Sponsored Race' : 'Program Ad';
+          const sizeLabel = ad.sizeLabel || 
+            (ad.price === 25 ? 'Business Card' :
+             ad.price === 50 ? '½ Page' :
+             ad.price === 100 ? 'Full Page' :
+             ad.price === 120 ? 'Full Page + Sponsored Race' : 'Program Ad');
           
           lineItems.push({
             price_data: {
               currency: 'usd',
               product_data: {
                 name: `Program Book Ad - ${sizeLabel}`,
-                description: `Program Ad #${ad.adNumber}`
+                description: `Business: ${ad.businessName || 'Program Ad'}`
               },
-              unit_amount: ad.price * 100 // Convert to cents
+              unit_amount: ad.price * 100
             },
             quantity: 1
           });
@@ -88,48 +83,60 @@ export default async function handler(req, res) {
       
       let raffleQtyRaw;
       if (data.cart.raffleTickets.type === 'individual') {
-          raffleQtyRaw = data.cart.raffleTickets.quantity;
+        raffleQtyRaw = data.cart.raffleTickets.individualTickets || data.cart.raffleTickets.quantity;
       } else {
-          raffleQtyRaw = data.cart.raffleTickets.bookQuantity;
+        raffleQtyRaw = data.cart.raffleTickets.books || data.cart.raffleTickets.bookQuantity;
       }
       
-      // Use parseInt() to ensure quantity is a clean integer
-      const finalRaffleQty = parseInt(raffleQtyRaw, 10) || 0; 
+      const finalRaffleQty = parseInt(raffleQtyRaw, 10) || 0;
       
-      // Check if the calculated quantity (finalRaffleQty) is valid for adding the item
       if (finalRaffleQty > 0) {
-          lineItems.push({
-            price_data: {
-              currency: 'usd',
-              product_data: {
-                name: 'Raffle Tickets',
-                description: data.cart.raffleTickets.type === 'individual'
-                  ? `${finalRaffleQty} individual tickets`
-                  : `${finalRaffleQty} books (${finalRaffleQty * 5} tickets)`
-              },
-              unit_amount: price * 100
+        lineItems.push({
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Raffle Tickets',
+              description: data.cart.raffleTickets.type === 'individual'
+                ? `${finalRaffleQty} individual tickets`
+                : `${finalRaffleQty} books (${finalRaffleQty * 5} tickets)`
             },
-            quantity: finalRaffleQty
-          });
+            unit_amount: price * 100
+          },
+          quantity: finalRaffleQty
+        });
       }
     }
 
-    // Cash Donation (Quantity is always 1)
+    // Cash Donation
+    if (data.cart.cashDonation && data.cart.cashDonation.amount > 0) {
+      lineItems.push({
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: 'Cash Donation',
+            description: 'Tax-deductible donation'
+          },
+          unit_amount: Math.round(data.cart.cashDonation.amount * 100)
+        },
+        quantity: 1
+      });
+    }
+    
     if (data.cart.donation && data.cart.donation.type === 'cash' && data.cart.donation.amount > 0) {
       lineItems.push({
         price_data: {
           currency: 'usd',
           product_data: {
             name: 'Cash Donation',
-            description: 'Tax-deductible donation to Brady Campbell Irish Dance School'
+            description: 'Tax-deductible donation'
           },
           unit_amount: Math.round(data.cart.donation.amount * 100)
         },
-        quantity: 1 
+        quantity: 1
       });
     }
 
-    // Add processing fee if customer is covering it (Quantity is always 1)
+    // Processing Fee
     if (data.totals.coveringFees && data.totals.processingFee > 0) {
       lineItems.push({
         price_data: {
@@ -143,17 +150,50 @@ export default async function handler(req, res) {
         quantity: 1
       });
     }
-    
-    // FINAL CHECK: Ensure there is at least one item before creating the session
+
     if (lineItems.length === 0) {
-        return res.status(400).json({ error: 'Cart is empty. Cannot create a checkout session without items.' });
+      return res.status(400).json({ error: 'Cart is empty' });
     }
 
-    // Calculate the correct origin dynamically for success/cancel URLs
     const origin = req.headers.origin || `https://${req.headers.host}`;
 
+    // Prepare metadata (within 500 char limit per field)
+    const metadata = {
+      purchaserName: `${data.purchaser.firstName} ${data.purchaser.lastName}`,
+      dancerFamily: data.purchaser.dancerFamily,
+      phone: data.purchaser.phone
+    };
 
-    // Create Stripe Checkout Session
+    // Add detailed cart data to metadata (truncate if needed)
+    if (data.cart.eventTickets?.tableName) {
+      metadata.tableName = data.cart.eventTickets.tableName.substring(0, 400);
+    }
+
+    if (data.cart.horses?.entries && data.cart.horses.entries.length > 0) {
+      const horsesData = data.cart.horses.entries.map(h => ({ name: h.name, owner: h.owner }));
+      metadata.horses = JSON.stringify(horsesData).substring(0, 450);
+    }
+
+    if (data.cart.programAds && data.cart.programAds.length > 0) {
+      const adsData = data.cart.programAds.map(ad => ({
+        business: ad.businessName,
+        size: ad.sizeLabel,
+        design: ad.designOption
+      }));
+      metadata.programAds = JSON.stringify(adsData).substring(0, 450);
+    }
+
+    if (data.cart.raffleTickets?.entries && data.cart.raffleTickets.entries.length > 0) {
+      const raffleData = data.cart.raffleTickets.entries.map(e => ({
+        name: e.name,
+        contact: e.contact,
+        tickets: e.tickets
+      }));
+      metadata.raffleOwners = JSON.stringify(raffleData).substring(0, 450);
+    }
+
+    console.log('💳 Creating Stripe session');
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: lineItems,
@@ -161,30 +201,21 @@ export default async function handler(req, res) {
       success_url: `${origin}/success.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/cancel.html`,
       customer_email: data.purchaser.email,
-      metadata: {
-        purchaserName: `${data.purchaser.firstName} ${data.purchaser.lastName}`, // <-- CORRECTED TYPO HERE
-        dancerFamily: data.purchaser.dancerFamily,
-        phone: data.purchaser.phone,
-        // --- FIX: Metadata size limit ---
-        // Removed the orderData: JSON.stringify(data) field, as it exceeded 500 characters.
-        // If full order details are needed later, they should be stored in a database (like Firestore) 
-        // and only the order ID should be passed here.
-      }
+      metadata: metadata
     });
 
-    // Return the session URL using Vercel's standard response method
+    console.log('✅ Session created:', session.id);
+    console.log('⏳ Order will be saved via webhook after payment');
+
     return res.status(200).json({ url: session.url });
 
   } catch (error) {
-    console.error('Stripe error:', error);
-    // Return error using Vercel's standard response method
-    if (error.type === 'StripeInvalidRequestError' && error.param) {
-      // Updated error message to include specific reason from the logs
-      const customError = error.param === 'metadata' ? 'Metadata value exceeded Stripe\'s 500 character limit.' : `Line item parameter issue (${error.param}). Please ensure all item quantities are greater than zero.`;
-      
+    console.error('❌ Error:', error);
+    
+    if (error.type === 'StripeInvalidRequestError') {
       return res.status(500).json({ 
-        error: `Checkout validation error: ${customError}`,
-        stripe_param: error.param
+        error: `Stripe error: ${error.message}`,
+        param: error.param
       });
     }
     
