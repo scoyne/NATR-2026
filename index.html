@@ -1,1654 +1,248 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NATR Purchase Form - Complete Working Version</title>
-    <style>
-      /* RESET AND BASE STYLES */
-      * { 
-          margin: 0; 
-          padding: 0; 
-          box-sizing: border-box; 
-          /* Smooth transitions for all elements */
-          transition: all 0.3s ease-in-out;
-      }
-      body {
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          /* Dark, racing-themed gradient background (Black/Green blend) */
-          background: linear-gradient(135deg, #0a0e1a 0%, #1a2f1a 50%, #0a0e1a 100%);
-          color: white;
-          padding: 20px;
-          min-height: 100vh;
-          /* Subtle Celtic pattern hook (can be added via background image or SVG) */
-          background-image: radial-gradient(rgba(139, 195, 74, 0.1) 1px, transparent 1px);
-          background-size: 20px 20px;
-      }
-      
-      .container { 
-          max-width: 900px; 
-          margin: 0 auto; 
-          display: grid;
-          /*grid-template-columns: 2fr 1fr; /* Main content and Cart side-by-side */
-          gap: 30px;
-      }
-      
-      /* HEADER AND TYPOGRAPHY */
-      .header { 
-          text-align: center; 
-          margin-bottom: 40px; 
-          grid-column: 1 / -1; /* Header spans both columns */
-      }
-      .logo {
-          width: 80px; 
-          height: 80px;
-          background: linear-gradient(135deg, #8bc34a, #689f38);
-          border-radius: 50%; /* Changed to circle for a modern/coin look */
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 28px;
-          font-weight: bold;
-          color: #000;
-          margin: 0 auto 20px;
-          box-shadow: 0 0 25px rgba(139, 195, 74, 0.5);
-          animation: pulse 2s infinite alternate; /* Pulsing logo effect */
-      }
-      @keyframes pulse {
-          from { transform: scale(1); box-shadow: 0 0 25px rgba(139, 195, 74, 0.5); }
-          to { transform: scale(1.05); box-shadow: 0 0 35px rgba(139, 195, 74, 0.8); }
-      }
-      
-      h1 {
-          font-size: 44px; /* Larger title */
-          font-weight: 900;
-          background: linear-gradient(135deg, #cddc39, #8bc34a, #cddc39);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          margin-bottom: 5px;
-          letter-spacing: 2px;
-      }
-      .subtitle { 
-          color: #8bc34a; 
-          font-size: 16px; 
-          text-transform: uppercase; 
-          letter-spacing: 3px; 
-          font-weight: 600;
-      }
-      
-      /* CARDS AND GLASS-MORPHISM */
-      .main-content {
-          grid-column: 1 / 2;
-      }
-      
-      .form-card {
-          /* Glass-Morphism Effect */
-          background: rgba(255, 255, 255, 0.05);
-          backdrop-filter: blur(20px);
-          border: 1px solid rgba(139, 195, 74, 0.4);
-          border-radius: 20px;
-          padding: 30px;
-          margin-bottom: 25px;
-          box-shadow: 0 8px 32px 0 rgba(139, 195, 74, 0.1);
-      }
-      
-      .section-title {
-          color: #cddc39;
-          font-size: 24px;
-          margin-bottom: 25px;
-          padding-bottom: 10px;
-          border-bottom: 2px solid rgba(139, 195, 74, 0.3);
-          font-weight: 700;
-      }
-      
-      /* FORM ELEMENTS */
-      .form-group { 
-          margin-bottom: 20px; 
-      }
-      .form-label {
-          display: block;
-          font-size: 13px;
-          font-weight: 600;
-          margin-bottom: 8px;
-          color: #8bc34a;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-      }
-      .required { 
-          color: #ff5722; 
-          margin-left: 4px; 
-      }
-      .form-input, .form-select, textarea.form-input {
-          width: 100%;
-          padding: 12px;
-          border: 1px solid rgba(139, 195, 74, 0.3);
-          border-radius: 10px;
-          background: rgba(0, 0, 0, 0.4);
-          color: white;
-          font-size: 16px;
-          font-family: inherit;
-          box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
-      }
-      .form-input:focus, .form-select:focus {
-          outline: none;
-          border-color: #cddc39;
-          box-shadow: 0 0 10px rgba(205, 220, 57, 0.5);
-      }
-      .form-select {
-          appearance: none;
-          background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238bc34a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
-          background-repeat: no-repeat;
-          background-position: right 15px center;
-          background-size: 20px;
-          padding-right: 45px;
-          cursor: pointer;
-      }
-      textarea.form-input { 
-          min-height: 80px; 
-          resize: vertical; 
-      }
-      .input-row { 
-          display: grid; 
-          grid-template-columns: 1fr 1fr; 
-          gap: 15px; 
-      }
-      
-      /* PURCHASE ITEMS LIST */
-      .purchase-item {
-          background: rgba(0, 0, 0, 0.3);
-          border: 1px solid rgba(139, 195, 74, 0.2);
-          border-radius: 15px;
-          padding: 20px;
-          margin-bottom: 15px;
-          cursor: pointer;
-          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-      }
-      .purchase-item:hover { 
-          border-color: #8bc34a; 
-          background: rgba(0, 0, 0, 0.5);
-      }
-      
-      .item-header { 
-          display: flex; 
-          align-items: center; 
-          margin-bottom: 10px; 
-          cursor: pointer; 
-      }
-      .checkbox-custom { 
-          width: 24px; 
-          height: 24px; 
-          margin-right: 15px; 
-          accent-color: #8bc34a; 
-          cursor: pointer; 
-      }
-      .item-title { 
-          flex: 1; 
-      }
-      .item-name { 
-          font-size: 18px; 
-          font-weight: 700; 
-          color: #cddc39; 
-          margin-bottom: 2px; 
-      }
-      .item-price { 
-          font-size: 14px; 
-          opacity: 0.8; 
-      }
-      .inventory-badge {
-          background: #ffc107;
-          padding: 4px 10px;
-          border-radius: 15px;
-          font-size: 12px;
-          font-weight: 700;
-          color: #333;
-          text-transform: uppercase;
-      }
-      .inventory-badge.sold-out { 
-          background: #f44336; 
-          color: white; 
-      }
-      
-      .conditional-fields { 
-          margin-top: 15px; 
-          padding-top: 15px; 
-          border-top: 1px solid rgba(139, 195, 74, 0.2); 
-          display: none; 
-          animation: fadeIn 0.5s;
-      }
-      .conditional-fields.visible { 
-          display: block; 
-      }
-      
-      .info-box {
-          background: rgba(139, 195, 74, 0.1);
-          border-left: 4px solid #8bc34a;
-          padding: 12px;
-          border-radius: 5px;
-          margin: 10px 0;
-      }
-      .info-box p { 
-          font-size: 13px; 
-          line-height: 1.6; 
-          opacity: 0.9; 
-      }
-      
-      /* SHOPPING CART */
-      .shopping-cart {
-          grid-column: 2 / 3;
-          background: rgba(0, 0, 0, 0.5);
-          backdrop-filter: blur(30px);
-          border: 2px solid #8bc34a;
-          border-radius: 20px;
-          padding: 25px;
-          position: sticky;
-          top: 20px;
-          align-self: start;
-          box-shadow: 0 10px 40px rgba(139, 195, 74, 0.3);
-      }
-      .cart-title { 
-          font-size: 22px; 
-          color: #cddc39; 
-          margin-bottom: 20px; 
-          text-align: center; 
-          font-weight: 700;
-      }
-      .cart-items { 
-          margin-bottom: 15px; 
-      }
-      .cart-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 10px 0;
-          border-bottom: 1px dashed rgba(139, 195, 74, 0.2);
-      }
-      .cart-item:last-child { 
-          border-bottom: none; 
-      }
-      .cart-item-name { 
-          font-size: 14px; 
-          opacity: 0.9; 
-      }
-      .cart-item-qty { 
-          font-size: 12px; 
-          opacity: 0.7; 
-          margin-top: 2px; 
-      }
-      .cart-item-price { 
-          font-size: 16px; 
-          font-weight: 700; 
-          color: #8bc34a; 
-      }
-      .cart-empty { 
-          text-align: center; 
-          opacity: 0.6; 
-          padding: 20px 0; 
-          font-size: 14px; 
-      }
-      .cart-totals { 
-          margin-top: 15px; 
-          padding-top: 15px; 
-          border-top: 2px solid rgba(139, 195, 74, 0.3); 
-      }
-      .cart-total-row { 
-          display: flex; 
-          justify-content: space-between; 
-          margin-bottom: 8px; 
-          font-size: 15px;
-      }
-      .cart-total-row.final {
-          font-size: 24px;
-          font-weight: 900;
-          color: #cddc39;
-          margin-top: 15px;
-          padding-top: 15px;
-          border-top: 2px solid #8bc34a;
-      }
-      
-      /* BUTTONS */
-      .btn {
-          width: 100%;
-          padding: 15px;
-          border: none;
-          border-radius: 12px;
-          font-size: 16px;
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          cursor: pointer;
-      }
-      .btn-primary {
-          background: linear-gradient(135deg, #8bc34a, #689f38);
-          color: #000;
-          box-shadow: 0 5px 20px rgba(139, 195, 74, 0.4);
-      }
-      .btn-primary:hover:not(:disabled) { 
-          transform: translateY(-2px); 
-          box-shadow: 0 10px 25px rgba(139, 195, 74, 0.6); 
-      }
-      .btn-primary:disabled { 
-          background: #666; 
-          cursor: not-allowed; 
-          opacity: 0.5; 
-          box-shadow: none;
-      }
-      .btn-secondary { 
-          background: rgba(139, 195, 74, 0.1); 
-          border: 1px solid #8bc34a; 
-          color: #8bc34a; 
-          margin-top: 10px;
-      }
-      
-      /* MEDIA QUERIES for Mobile */
-      @media (max-width: 768px) {
-          .container { 
-              grid-template-columns: 1fr; /* Stack columns on mobile */
-              gap: 20px;
-          }
-          .main-content, .shopping-cart {
-              grid-column: 1 / -1;
-          }
-          .input-row { 
-              grid-template-columns: 1fr; 
-          }
-          .form-card { 
-              padding: 20px; 
-          }
-          h1 { 
-              font-size: 36px; 
-          }
-          .shopping-cart {
-              position: static; /* Unstick the cart on mobile */
-          }
-      }
-         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0a0e1a 0%, #1a2f1a 50%, #0a0e1a 100%);
-            color: white;
-            padding: 20px;
-            min-height: 100vh;
-        }
-        .container { max-width: 900px; margin: 0 auto; }
-        .header { text-align: center; margin-bottom: 40px; }
-        .logo {
-            width: 80px; height: 80px;
-            background: linear-gradient(135deg, #8bc34a, #689f38);
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            font-weight: bold;
-            color: #000;
-            margin: 0 auto 20px;
-            box-shadow: 0 10px 30px rgba(139, 195, 74, 0.4);
-        }
-        h1 {
-            font-size: 36px;
-            background: linear-gradient(135deg, #8bc34a, #cddc39);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
-        }
-        .subtitle { color: #8bc34a; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; }
-        .form-card {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(139, 195, 74, 0.2);
-            border-radius: 20px;
-            padding: 40px;
-            margin-bottom: 20px;
-        }
-        .section-title {
-            color: #8bc34a;
-            font-size: 20px;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid rgba(139, 195, 74, 0.2);
-        }
-        .form-group { margin-bottom: 25px; }
-        .form-label {
-            display: block;
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #8bc34a;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .required { color: #ff5722; margin-left: 4px; }
-        .form-input, .form-select {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid rgba(139, 195, 74, 0.2);
-            border-radius: 10px;
-            background: rgba(0, 0, 0, 0.3);
-            color: white;
-            font-size: 15px;
-            font-family: inherit;
-            transition: all 0.3s ease;
-        }
-        .form-input:focus, .form-select:focus {
-            outline: none;
-            border-color: #8bc34a;
-            box-shadow: 0 0 15px rgba(139, 195, 74, 0.3);
-        }
-        .form-select {
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238bc34a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 15px center;
-            background-size: 20px;
-            padding-right: 45px;
-            cursor: pointer;
-        }
-        textarea.form-input { min-height: 100px; resize: vertical; }
-        .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .purchase-item {
-            background: rgba(0, 0, 0, 0.3);
-            border: 2px solid rgba(139, 195, 74, 0.2);
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-        }
-        .purchase-item:hover { border-color: #8bc34a; }
-        .item-header { display: flex; align-items: center; margin-bottom: 20px; cursor: pointer; }
-        .checkbox-custom { width: 24px; height: 24px; margin-right: 15px; accent-color: #8bc34a; cursor: pointer; }
-        .item-title { flex: 1; }
-        .item-name { font-size: 20px; font-weight: 700; color: #8bc34a; margin-bottom: 5px; }
-        .item-price { font-size: 16px; opacity: 0.8; }
-        .inventory-badge {
-            background: rgba(139, 195, 74, 0.2);
-            border: 1px solid #8bc34a;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            color: #8bc34a;
-        }
-        .conditional-fields { margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(139, 195, 74, 0.2); display: none; }
-        .conditional-fields.visible { display: block; }
-        .info-box {
-            background: rgba(139, 195, 74, 0.1);
-            border-left: 4px solid #8bc34a;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-        }
-        .info-box p { font-size: 14px; line-height: 1.6; opacity: 0.9; }
-        .shopping-cart {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
-            border: 2px solid #8bc34a;
-            border-radius: 20px;
-            padding: 30px;
-            position: sticky;
-            top: 20px;
-        }
-        .cart-title { font-size: 24px; color: #8bc34a; margin-bottom: 20px; text-align: center; }
-        .cart-items { margin-bottom: 20px; }
-        .cart-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(139, 195, 74, 0.2);
-        }
-        .cart-item:last-child { border-bottom: none; }
-        .cart-item-name { font-size: 14px; opacity: 0.9; }
-        .cart-item-qty { font-size: 12px; opacity: 0.7; margin-top: 4px; }
-        .cart-item-price { font-size: 16px; font-weight: 700; color: #8bc34a; }
-        .cart-empty { text-align: center; opacity: 0.6; padding: 30px 0; font-size: 14px; }
-        .cart-totals { margin-top: 20px; padding-top: 20px; border-top: 2px solid rgba(139, 195, 74, 0.3); }
-        .cart-total-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
-        .cart-total-row.final {
-            font-size: 24px;
-            font-weight: 900;
-            color: #8bc34a;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 2px solid #8bc34a;
-        }
-        .btn {
-            width: 100%;
-            padding: 18px;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #8bc34a, #689f38);
-            color: #000;
-            box-shadow: 0 10px 30px rgba(139, 195, 74, 0.3);
-        }
-        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 15px 40px rgba(139, 195, 74, 0.5); }
-        .btn-primary:disabled { background: #666; cursor: not-allowed; opacity: 0.5; }
-        .btn-secondary { background: rgba(139, 195, 74, 0.1); border: 2px solid #8bc34a; color: #8bc34a; margin-top: 15px; }
-        @media (max-width: 768px) {
-            .input-row { grid-template-columns: 1fr; }
-            .form-card { padding: 25px; }
-            h1 { font-size: 28px; }
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Night at the Races 2025 - Purchase tickets, sponsor horses, and support Brady Campbell Irish Dance School">
+    <title>NATR Purchase Form - Night at the Races 2025</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Preconnect to external services for better performance -->
+    <link rel="preconnect" href="https://api.stripe.com">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">BC</div>
-            <h1>Purchase Form</h1>
-            <p class="subtitle">Night at the Races 2025</p>
-        </div>
+    <div class="container">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="logo">BC</div>
+            <h1>Purchase Form</h1>
+            <p class="subtitle">Night at the Races 2025</p>
+        </div>
 
-        <div class="form-card">
-            <h2 class="section-title">👤 Purchaser Information</h2>
-            <div class="form-group">
-                <label class="form-label">Full Name<span class="required">*</span></label>
-                <div class="input-row">
-                    <input type="text" class="form-input" id="firstName" placeholder="First Name" required>
-                    <input type="text" class="form-input" id="lastName" placeholder="Last Name" required>
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Email<span class="required">*</span></label>
-                <input type="email" class="form-input" id="email" placeholder="your.email@example.com" required>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Phone<span class="required">*</span></label>
-                <input type="tel" class="form-input" id="phone" placeholder="(216) 555-0123" required>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Dancer Family<span class="required">*</span></label>
-                <select class="form-select" id="dancerFamily" required>
-                    <option value="">Select</option>
-                    <option value="campbell">Campbell</option>
-                    <option value="murphy">Murphy</option>
-                    <option value="smith">Smith</option>
-                    <option value="kelly">Kelly</option>
-                    <option value="none">None (General Supporter)</option>
-                </select>
-            </div>
-        </div>
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
+            <!-- PURCHASER INFORMATION -->
+            <div class="form-card">
+                <h2 class="section-title">👤 Purchaser Information</h2>
+                <div class="form-group">
+                    <label class="form-label">Full Name<span class="required">*</span></label>
+                    <div class="input-row">
+                        <input type="text" class="form-input" id="firstName" placeholder="First Name" required aria-label="First Name">
+                        <input type="text" class="form-input" id="lastName" placeholder="Last Name" required aria-label="Last Name">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email<span class="required">*</span></label>
+                    <input type="email" class="form-input" id="email" placeholder="your.email@example.com" required aria-label="Email Address">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone<span class="required">*</span></label>
+                    <input type="tel" class="form-input" id="phone" placeholder="(216) 555-0123" required aria-label="Phone Number">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Dancer Family<span class="required">*</span></label>
+                    <select class="form-select" id="dancerFamily" required aria-label="Dancer Family">
+                        <option value="">Select</option>
+                        <option value="campbell">Campbell</option>
+                        <option value="murphy">Murphy</option>
+                        <option value="smith">Smith</option>
+                        <option value="kelly">Kelly</option>
+                        <option value="none">None (General Supporter)</option>
+                    </select>
+                </div>
+            </div>
 
-        <div class="form-card">
-            <h2 class="section-title">🎟️ Items</h2>
+            <!-- PURCHASE ITEMS -->
+            <div class="form-card">
+                <h2 class="section-title">🎟️ Items</h2>
 
-            <div class="purchase-item">
-                <div class="item-header">
-                    <input type="checkbox" class="checkbox-custom" id="eventTicketsCheck">
-                    <div class="item-title">
-                        <div class="item-name">🎟️ Event Tickets</div>
-                        <div class="item-price">$25 per person</div>
-                    </div>
-                    <span class="inventory-badge" id="ticketInventory">500/500 Available</span>
-                </div>
-                <div class="conditional-fields" id="eventTicketsFields">
-                    <div class="info-box"><p>Tickets are first-come, first-served (500 maximum capacity).</p></div>
-                    <div class="form-group">
-                        <label class="form-label">Quantity</label>
-                        <select class="form-select" id="ticketQuantity">
-                            <option value="">Select</option>
-                            <script>
-                                for(let i = 1; i <= 15; i++) {
-                                    document.write(`<option value="${i}">${i} - $${i*25}</option>`);
-                                }
-                            </script>
-                        </select>
-                    </div>
-                    <div class="form-group" id="tableReservationField" style="display:none;">
-                        <label class="form-label">Table Reservation Name (for 8+ tickets)<span class="required">*</span></label>
-                        <input type="text" class="form-input" id="tableName" placeholder="Enter Table Name (e.g., The Murphy Family Table)">
-                    </div>
-                </div>
-            </div>
+                <!-- EVENT TICKETS -->
+                <div class="purchase-item">
+                    <div class="item-header">
+                        <input type="checkbox" class="checkbox-custom" id="eventTicketsCheck" aria-label="Select Event Tickets">
+                        <div class="item-title">
+                            <div class="item-name">🎟️ Event Tickets</div>
+                            <div class="item-price">$25 per person</div>
+                        </div>
+                        <span class="inventory-badge" id="ticketInventory">500/500 Available</span>
+                    </div>
+                    <div class="conditional-fields" id="eventTicketsFields">
+                        <div class="info-box"><p>Tickets are first-come, first-served (500 maximum capacity).</p></div>
+                        <div class="form-group">
+                            <label class="form-label">Quantity</label>
+                            <select class="form-select" id="ticketQuantity" aria-label="Ticket Quantity">
+                                <option value="">Select</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="tableReservationField" style="display:none;">
+                            <label class="form-label">Table Reservation Name (for 8+ tickets)<span class="required">*</span></label>
+                            <input type="text" class="form-input" id="tableName" placeholder="Enter Table Name (e.g., The Murphy Family Table)" aria-label="Table Name">
+                        </div>
+                    </div>
+                </div>
 
-            <div class="purchase-item">
-                <div class="item-header">
-                    <input type="checkbox" class="checkbox-custom" id="horseSponsorshipCheck">
-                    <div class="item-title">
-                        <div class="item-name">🏇 Horse Sponsorship</div>
-                        <div class="item-price">$25 per horse</div>
-                    </div>
-                    <span class="inventory-badge" id="horseInventory">90/90 Available</span>
-                </div>
-                <div class="conditional-fields" id="horseSponsorshipFields">
-                    <div class="info-box"><p>Horse sponsorships are first-come, first-served. Each horse will be randomly assigned to one of the 9 races.</p></div>
-                    <div class="form-group">
-                        <label class="form-label">Number of Horses to Sponsor</label>
-                        <select class="form-select" id="horseQuantity">
-                            <option value="">Select</option>
-                            <script>
-                                for(let i = 1; i <= 10; i++) {
-                                    document.write(`<option value="${i}">${i} - $${i*25}</option>`);
-                                }
-                            </script>
-                        </select>
-                    </div>
-                    <div id="horseEntriesContainer">
-                        </div>
-                </div>
-            </div>
+                <!-- HORSE SPONSORSHIP -->
+                <div class="purchase-item">
+                    <div class="item-header">
+                        <input type="checkbox" class="checkbox-custom" id="horseSponsorshipCheck" aria-label="Select Horse Sponsorship">
+                        <div class="item-title">
+                            <div class="item-name">🏇 Horse Sponsorship</div>
+                            <div class="item-price">$25 per horse</div>
+                        </div>
+                        <span class="inventory-badge" id="horseInventory">90/90 Available</span>
+                    </div>
+                    <div class="conditional-fields" id="horseSponsorshipFields">
+                        <div class="info-box"><p>Horse sponsorships are first-come, first-served. Each horse will be randomly assigned to one of the 9 races.</p></div>
+                        <div class="form-group">
+                            <label class="form-label">Number of Horses to Sponsor</label>
+                            <select class="form-select" id="horseQuantity" aria-label="Number of Horses">
+                                <option value="">Select</option>
+                            </select>
+                        </div>
+                        <div id="horseEntriesContainer" aria-live="polite"></div>
+                    </div>
+                </div>
 
-            <div class="purchase-item">
-                <div class="item-header">
-                    <input type="checkbox" class="checkbox-custom" id="programAdCheck">
-                    <div class="item-title">
-                        <div class="item-name">📖 Program Book Ads</div>
-                        <div class="item-price">Starting at $25</div>
-                    </div>
-                </div>
-                <div class="conditional-fields" id="programAdFields">
-                    <div class="info-box"><p>Ad Submission Deadline: **March 13th**</p></div>
-                    <div id="adsContainer">
-                        </div>
-                    <button class="btn btn-secondary" id="addAdBtn" style="display:none; margin-top: 15px;">+ Add Another Ad</button>
-                </div>
-            </div>
+                <!-- PROGRAM ADS -->
+                <div class="purchase-item">
+                    <div class="item-header">
+                        <input type="checkbox" class="checkbox-custom" id="programAdCheck" aria-label="Select Program Book Ads">
+                        <div class="item-title">
+                            <div class="item-name">📖 Program Book Ads</div>
+                            <div class="item-price">Starting at $25</div>
+                        </div>
+                    </div>
+                    <div class="conditional-fields" id="programAdFields">
+                        <div class="info-box"><p>Ad Submission Deadline: <strong>March 13th</strong></p></div>
+                        <div id="adsContainer" aria-live="polite"></div>
+                        <button type="button" class="btn btn-secondary" id="addAdBtn" style="display:none;" aria-label="Add Another Program Ad">+ Add Another Ad</button>
+                    </div>
+                </div>
 
-            <div class="purchase-item">
-                <div class="item-header">
-                    <input type="checkbox" class="checkbox-custom" id="raffleTicketsCheck">
-                    <div class="item-title">
-                        <div class="item-name">🎫 Raffle Tickets</div>
-                        <div class="item-price">$5 each or Book of 5 for $20</div>
-                    </div>
-                </div>
-                <div class="conditional-fields" id="raffleTicketsFields">
-                    <div class="form-group">
-                        <label class="form-label">Purchase Type</label>
-                        <select class="form-select" id="raffleType">
-                            <option value="">Select</option>
-                            <option value="individual">Individual Tickets ($5 each)</option>
-                            <option value="book">Books of 5 Tickets ($20 per book)</option>
-                        </select>
-                    </div>
-                    <div id="raffleIndividualOptions" style="display:none;">
-                        <div class="form-group">
-                            <label class="form-label">Number of Individual Tickets</label>
-                            <select class="form-select" id="raffleQuantityIndividual">
-                                <option value="">Select</option>
-                                <script>
-                                    for(let i = 1; i <= 25; i++) {
-                                        document.write(`<option value="${i}">${i} Tickets - $${i*5}</option>`);
-                                    }
-                                </script>
-                            </select>
-                        </div>
-                    </div>
-                    <div id="raffleBookOptions" style="display:none;">
-                        <div class="form-group">
-                            <label class="form-label">Number of Books (5 tickets per book)</label>
-                            <select class="form-select" id="raffleQuantityBook">
-                                <option value="">Select</option>
-                                <script>
-                                    for(let i = 1; i <= 10; i++) {
-                                        document.write(`<option value="${i}">${i} Book(s) (${i*5} Tickets) - $${i*20}</option>`);
-                                    }
-                                </script>
-                            </select>
-                        </div>
-                    </div>
-                    <div id="raffleEntriesContainer">
-                        </div>
-                </div>
-            </div>
+                <!-- RAFFLE TICKETS -->
+                <div class="purchase-item">
+                    <div class="item-header">
+                        <input type="checkbox" class="checkbox-custom" id="raffleTicketsCheck" aria-label="Select Raffle Tickets">
+                        <div class="item-title">
+                            <div class="item-name">🎫 Raffle Tickets</div>
+                            <div class="item-price">$5 each or Book of 5 for $20</div>
+                        </div>
+                    </div>
+                    <div class="conditional-fields" id="raffleTicketsFields">
+                        <div class="form-group">
+                            <label class="form-label">Purchase Type</label>
+                            <select class="form-select" id="raffleType" aria-label="Raffle Ticket Type">
+                                <option value="">Select</option>
+                                <option value="individual">Individual Tickets ($5 each)</option>
+                                <option value="book">Books of 5 Tickets ($20 per book)</option>
+                            </select>
+                        </div>
+                        <div id="raffleIndividualOptions" style="display:none;">
+                            <div class="form-group">
+                                <label class="form-label">Number of Individual Tickets</label>
+                                <select class="form-select" id="raffleQuantityIndividual" aria-label="Number of Individual Tickets">
+                                    <option value="">Select</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="raffleBookOptions" style="display:none;">
+                            <div class="form-group">
+                                <label class="form-label">Number of Books (5 tickets per book)</label>
+                                <select class="form-select" id="raffleQuantityBook" aria-label="Number of Books">
+                                    <option value="">Select</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="raffleEntriesContainer" aria-live="polite"></div>
+                    </div>
+                </div>
 
-            <div class="purchase-item">
-                <div class="item-header">
-                    <input type="checkbox" class="checkbox-custom" id="basketDonationCheck">
-                    <div class="item-title">
-                        <div class="item-name">🧺 Basket Raffle & Donation</div>
-                        <div class="item-price">Gift Basket or Cash Donation</div>
-                    </div>
-                </div>
-                <div class="conditional-fields" id="basketDonationFields">
-                    <div class="form-group">
-                        <label class="form-label">Type of Donation</label>
-                        <select class="form-select" id="donationType">
-                            <option value="">Select</option>
-                            <option value="basket">Gift Basket (Physical Donation)</option>
-                            <option value="cash">Cash Donation</option>
-                        </select>
-                    </div>
-                    <div id="giftBasketFields" style="display:none;">
-                        <div class="form-group">
-                            <label class="form-label">Basket Theme / Description<span class="required">*</span></label>
-                            <textarea class="form-input" id="basketDescription" placeholder="e.g., Wine & Cheese Lovers Basket"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Estimated Value<span class="required">*</span></label>
-                            <select class="form-select" id="basketValue">
-                                <option value="">Select</option>
-                                <option value="50">Under $50</option>
-                                <option value="100">$50 - $100</option>
-                                <option value="200">$100 - $200</option>
-                                <option value="201">Over $200</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div id="cashDonationFields" style="display:none;">
-                        <div class="form-group">
-                            <label class="form-label">Cash Donation Amount<span class="required">*</span></label>
-                            <input type="number" class="form-input" id="cashDonationAmount" placeholder="0.00" min="1" step="0.01">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Designate Purpose (Optional)</label>
-                            <select class="form-select" id="cashPurpose">
-                                <option value="">General Fund</option>
-                                <option value="costumes">Costumes</option>
-                                <option value="competition">Competition Fees</option>
-                                <option value="scholarship">Scholarship Fund</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Recognition Name (Optional)</label>
-                        <input type="text" class="form-input" id="recognitionName" placeholder="Name to be announced/listed">
-                    </div>
-                </div>
-            </div>
-        </div>
+                <!-- DONATIONS -->
+                <div class="purchase-item">
+                    <div class="item-header">
+                        <input type="checkbox" class="checkbox-custom" id="basketDonationCheck" aria-label="Select Basket or Donation">
+                        <div class="item-title">
+                            <div class="item-name">🧺 Basket Raffle & Donation</div>
+                            <div class="item-price">Gift Basket or Cash Donation</div>
+                        </div>
+                    </div>
+                    <div class="conditional-fields" id="basketDonationFields">
+                        <div class="form-group">
+                            <label class="form-label">Type of Donation</label>
+                            <select class="form-select" id="donationType" aria-label="Donation Type">
+                                <option value="">Select</option>
+                                <option value="basket">Gift Basket (Physical Donation)</option>
+                                <option value="cash">Cash Donation</option>
+                            </select>
+                        </div>
+                        <div id="giftBasketFields" style="display:none;">
+                            <div class="form-group">
+                                <label class="form-label">Basket Theme / Description<span class="required">*</span></label>
+                                <textarea class="form-input" id="basketDescription" placeholder="e.g., Wine & Cheese Lovers Basket" aria-label="Basket Description"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Estimated Value<span class="required">*</span></label>
+                                <select class="form-select" id="basketValue" aria-label="Basket Value">
+                                    <option value="">Select</option>
+                                    <option value="50">Under $50</option>
+                                    <option value="100">$50 - $100</option>
+                                    <option value="200">$100 - $200</option>
+                                    <option value="201">Over $200</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="cashDonationFields" style="display:none;">
+                            <div class="form-group">
+                                <label class="form-label">Cash Donation Amount<span class="required">*</span></label>
+                                <input type="number" class="form-input" id="cashDonationAmount" placeholder="0.00" min="1" step="0.01" aria-label="Donation Amount">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Designate Purpose (Optional)</label>
+                                <select class="form-select" id="cashPurpose" aria-label="Donation Purpose">
+                                    <option value="">General Fund</option>
+                                    <option value="costumes">Costumes</option>
+                                    <option value="competition">Competition Fees</option>
+                                    <option value="scholarship">Scholarship Fund</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Recognition Name (Optional)</label>
+                            <input type="text" class="form-input" id="recognitionName" placeholder="Name to be announced/listed" aria-label="Recognition Name">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        <div class="shopping-cart">
-            <h3 class="cart-title">🛒 Order Summary</h3>
-            <div class="cart-items" id="cartItems">
-                <div class="cart-empty">Cart is empty</div>
-            </div>
-            <div class="cart-totals" id="cartTotals" style="display:none;">
-                <div class="cart-total-row"><span>Subtotal:</span><span id="subtotal">$0.00</span></div>
-                
-                <div style="background: rgba(139,195,74,0.05); border: 1px solid rgba(139,195,74,0.2); border-radius: 10px; padding: 15px; margin: 15px 0;">
-                    <label style="display: flex; cursor: pointer;">
-                        <input type="checkbox" id="coverFeesCheckbox" style="width: 20px; height: 20px; margin-right: 12px; accent-color: #8bc34a;">
-                        <div style="flex: 1;">
-                            <div style="font-weight: 600; font-size: 14px;">💳 Help us by covering the processing fee</div>
-                            <div id="feeAmount" style="color: #8bc34a; font-weight: 600; margin-top: 8px; font-size: 13px;"></div>
-                        </div>
-                    </label>
-                </div>
-                
-                <div class="cart-total-row final"><span>Total:</span><span id="total">$0.00</span></div>
-            </div>
-            <button class="btn btn-primary" id="checkoutBtn" disabled>Proceed to Checkout</button>
-        </div>
-    </div>
-<!-- hiding existing script -->
-    <script>
-        // --- JAVASCRIPT LOGIC ---
-        
-        let cart = {
-            eventTickets: null,
-            horses: { quantity: 0, totalPrice: 0, entries: [] },
-            programAds: [],
-            raffleTickets: null,
-            donation: null,
-            cashDonation: null
-        };
-
-        const PRICES = {
-            TICKET: 25,
-            HORSE: 25,
-            RAFFLE_INDIVIDUAL: 5,
-            RAFFLE_BOOK: 20,
-            AD_BUSINESS_CARD: 25,
-            AD_QUARTER: 25,
-            AD_HALF: 50,
-            AD_FULL: 100,
-            AD_FULL_SPONSORED: 120,
-            FEE_PERCENT: 0.029,
-            FEE_FLAT: 0.30
-        };
-
-        const DOM = {
-            // Purchaser Info
-            firstName: document.getElementById('firstName'),
-            lastName: document.getElementById('lastName'),
-            email: document.getElementById('email'),
-            phone: document.getElementById('phone'),
-            dancerFamily: document.getElementById('dancerFamily'),
-
-            // Tickets
-            eventTicketsCheck: document.getElementById('eventTicketsCheck'),
-            eventTicketsFields: document.getElementById('eventTicketsFields'),
-            ticketQuantity: document.getElementById('ticketQuantity'),
-            tableReservationField: document.getElementById('tableReservationField'),
-            tableName: document.getElementById('tableName'),
-
-            // Horses
-            horseSponsorshipCheck: document.getElementById('horseSponsorshipCheck'),
-            horseSponsorshipFields: document.getElementById('horseSponsorshipFields'),
-            horseQuantity: document.getElementById('horseQuantity'),
-            horseEntriesContainer: document.getElementById('horseEntriesContainer'),
-
-            // Program Ads
-            programAdCheck: document.getElementById('programAdCheck'),
-            programAdFields: document.getElementById('programAdFields'),
-            adsContainer: document.getElementById('adsContainer'),
-            addAdBtn: document.getElementById('addAdBtn'),
-
-            // Raffle Tickets
-            raffleTicketsCheck: document.getElementById('raffleTicketsCheck'),
-            raffleTicketsFields: document.getElementById('raffleTicketsFields'),
-            raffleType: document.getElementById('raffleType'),
-            raffleQuantityIndividual: document.getElementById('raffleQuantityIndividual'),
-            raffleQuantityBook: document.getElementById('raffleQuantityBook'),
-            raffleIndividualOptions: document.getElementById('raffleIndividualOptions'),
-            raffleBookOptions: document.getElementById('raffleBookOptions'),
-            raffleEntriesContainer: document.getElementById('raffleEntriesContainer'),
-
-            // Donations
-            basketDonationCheck: document.getElementById('basketDonationCheck'),
-            basketDonationFields: document.getElementById('basketDonationFields'),
-            donationType: document.getElementById('donationType'),
-            giftBasketFields: document.getElementById('giftBasketFields'),
-            cashDonationFields: document.getElementById('cashDonationFields'),
-            basketDescription: document.getElementById('basketDescription'),
-            basketValue: document.getElementById('basketValue'),
-            cashDonationAmount: document.getElementById('cashDonationAmount'),
-            cashPurpose: document.getElementById('cashPurpose'),
-            recognitionName: document.getElementById('recognitionName'),
-
-            // Cart
-            cartItems: document.getElementById('cartItems'),
-            cartTotals: document.getElementById('cartTotals'),
-            subtotalDisplay: document.getElementById('subtotal'),
-            coverFeesCheckbox: document.getElementById('coverFeesCheckbox'),
-            feeAmountDisplay: document.getElementById('feeAmount'),
-            totalDisplay: document.getElementById('total'),
-            checkoutBtn: document.getElementById('checkoutBtn')
-        };
-
-
-        // --- CORE FUNCTIONS ---
-
-        function updateCart() {
-            let html = '', subtotal = 0;
-            const itemCounts = { paid: 0, donated: 0 };
-
-            // 1. Event Tickets
-            if (cart.eventTickets && cart.eventTickets.quantity > 0) {
-                subtotal += cart.eventTickets.total;
-                itemCounts.paid++;
-                html += `<div class="cart-item"><div><div class="cart-item-name">🎟️ Event Tickets</div><div class="cart-item-qty">${cart.eventTickets.quantity} × $${PRICES.TICKET}</div></div><div class="cart-item-price">$${cart.eventTickets.total.toFixed(2)}</div></div>`;
-            }
-
-            // 2. Horse Sponsorships
-            if (cart.horses.quantity > 0) {
-                subtotal += cart.horses.totalPrice;
-                itemCounts.paid++;
-                html += `<div class="cart-item"><div><div class="cart-item-name">🏇 Horse Sponsorships</div><div class="cart-item-qty">${cart.horses.quantity} Horse(s)</div></div><div class="cart-item-price">$${cart.horses.totalPrice.toFixed(2)}</div></div>`;
-            }
-            
-            // 3. Program Ads
-            cart.programAds.forEach((ad, index) => {
-                if (ad.price > 0) {
-                    subtotal += ad.price;
-                    itemCounts.paid++;
-                    html += `<div class="cart-item"><div><div class="cart-item-name">📖 Program Ad #${index + 1}</div><div class="cart-item-qty">${ad.sizeLabel}</div></div><div class="cart-item-price">$${ad.price.toFixed(2)}</div></div>`;
-                }
-            });
-
-            // 4. Raffle Tickets
-            if (cart.raffleTickets && cart.raffleTickets.totalPrice > 0) {
-                subtotal += cart.raffleTickets.totalPrice;
-                itemCounts.paid++;
-                const qtyText = cart.raffleTickets.type === 'book' ? `${cart.raffleTickets.books} Book(s) (${cart.raffleTickets.totalQuantity} Tix)` : `${cart.raffleTickets.totalQuantity} Individual Tix`;
-                html += `<div class="cart-item"><div><div class="cart-item-name">🎫 Raffle Tickets</div><div class="cart-item-qty">${qtyText}</div></div><div class="cart-item-price">$${cart.raffleTickets.totalPrice.toFixed(2)}</div></div>`;
-            }
-
-            // 5. Cash Donation
-            if (cart.cashDonation && cart.cashDonation.amount > 0) {
-                subtotal += cart.cashDonation.amount;
-                itemCounts.paid++;
-                html += `<div class="cart-item"><div><div class="cart-item-name">💵 Cash Donation</div><div class="cart-item-qty">${cart.cashDonation.purpose || 'General Fund'}</div></div><div class="cart-item-price">$${cart.cashDonation.amount.toFixed(2)}</div></div>`;
-            }
-
-            // 6. Gift Basket Donation (No charge, but shows up)
-            if (cart.donation && cart.donation.type === 'basket') {
-                itemCounts.donated++;
-                html += `<div class="cart-item"><div><div class="cart-item-name">🧺 Gift Basket Donation</div><div class="cart-item-qty">Value: ${cart.donation.valueLabel}</div></div><div class="cart-item-price">Thank you!</div></div>`;
-            }
-
-            // Update Cart UI
-            DOM.cartItems.innerHTML = html || '<div class="cart-empty">Cart is empty</div>';
-            DOM.cartTotals.style.display = (itemCounts.paid > 0 || itemCounts.donated > 0) ? 'block' : 'none';
-            DOM.subtotalDisplay.textContent = `$${subtotal.toFixed(2)}`;
-            DOM.checkoutBtn.disabled = itemCounts.paid === 0; // Disable if only basket donation
-            updateTotal(subtotal);
-
-            // Hide/Show Fee option if there is no subtotal
-            DOM.coverFeesCheckbox.closest('div').style.display = subtotal > 0 ? 'block' : 'none';
-
-            // Re-render conditional Horse/Ad fields which rely on cart data
-            updateHorseFields(); 
-            // This call to updateRaffleFields is NECESSARY to update its internal UI/data
-            updateRaffleFields();
-        }
-
-        function updateTotal(subtotal) {
-            const coverFees = DOM.coverFeesCheckbox.checked;
-            let fee = 0, total = subtotal;
-
-            if (coverFees && subtotal > 0) {
-                fee = (subtotal * PRICES.FEE_PERCENT) + PRICES.FEE_FLAT;
-                total = subtotal + fee;
-                DOM.feeAmountDisplay.textContent = `Fee: $${fee.toFixed(2)}`;
-                DOM.feeAmountDisplay.style.display = 'block';
-            } else {
-                DOM.feeAmountDisplay.style.display = 'none';
-            }
-
-            DOM.totalDisplay.textContent = `$${total.toFixed(2)}`;
-        }
-
-
-        // --- VALIDATION LOGIC ---
-
-        function validateEmail(email) {
-            const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-            return re.test(String(email).toLowerCase());
-        }
-
-        function validateForm() {
-            let isValid = true;
-            let firstErrorElement = null;
-
-            // Clear all error styling
-            document.querySelectorAll('.form-input, .form-select').forEach(field => {
-                field.style.borderColor = '';
-            });
-
-            // Required fields
-            const requiredFields = [DOM.firstName, DOM.lastName, DOM.email, DOM.phone, DOM.dancerFamily];
-            requiredFields.forEach(field => {
-                if (!field.value || field.value.trim() === '' || (field.type === 'email' && !validateEmail(field.value))) {
-                    field.style.borderColor = '#ff5722';
-                    if (!firstErrorElement) firstErrorElement = field;
-                    isValid = false;
-                }
-            });
-
-            // Table name for 8+ tickets
-            if (cart.eventTickets && cart.eventTickets.quantity >= 8) {
-                if (!DOM.tableName.value || DOM.tableName.value.trim() === '') {
-                    DOM.tableName.style.borderColor = '#ff5722';
-                    if (!firstErrorElement) firstErrorElement = DOM.tableName;
-                    isValid = false;
-                }
-            }
-
-            // Horse names - FIX: Only validate visible fields
-            if (cart.horses && cart.horses.quantity > 0) {
-                const horseNameInputs = document.querySelectorAll('.horse-name-input');
-                const ownerNameInputs = document.querySelectorAll('.owner-name-input');
+        <!-- SHOPPING CART -->
+        <div class="shopping-cart" role="complementary" aria-label="Shopping Cart">
+            <h3 class="cart-title">🛒 Order Summary</h3>
+            <div class="cart-items" id="cartItems" role="list" aria-live="polite">
+                <div class="cart-empty">Cart is empty</div>
+            </div>
+            <div class="cart-totals" id="cartTotals" style="display:none;">
+                <div class="cart-total-row"><span>Subtotal:</span><span id="subtotal">$0.00</span></div>
                 
-                horseNameInputs.forEach((horseField, index) => {
-                    const ownerField = ownerNameInputs[index];
-                    
-                    if (horseField && horseField.value.trim() === '') {
-                        horseField.style.borderColor = '#ff5722';
-                        if (!firstErrorElement) firstErrorElement = horseField;
-                        isValid = false;
-                    }
-                    
-                    if (ownerField && ownerField.value.trim() === '') {
-                        ownerField.style.borderColor = '#ff5722';
-                        if (!firstErrorElement) firstErrorElement = ownerField;
-                        isValid = false;
-                    }
-                });
-            }
-
-            // Program ads
-            if (cart.programAds && cart.programAds.length > 0) {
-                cart.programAds.forEach((ad, index) => {
-                    const adContainer = document.getElementById(`ad-container-${index}`);
-                    if (!adContainer) return;
-                    
-                    const adSize = adContainer.querySelector('.ad-size-select');
-                    const adBusiness = adContainer.querySelector('.ad-business-name');
-                    const adDesign = adContainer.querySelector('.ad-design-option');
-                    
-                    if (adSize && adSize.value === '') {
-                        adSize.style.borderColor = '#ff5722';
-                        if (!firstErrorElement) firstErrorElement = adSize;
-                        isValid = false;
-                    }
-                    if (adBusiness && adBusiness.value.trim() === '') {
-                        adBusiness.style.borderColor = '#ff5722';
-                        if (!firstErrorElement) firstErrorElement = adBusiness;
-                        isValid = false;
-                    }
-                    if (adDesign && adDesign.value === '') {
-                        adDesign.style.borderColor = '#ff5722';
-                        if (!firstErrorElement) firstErrorElement = adDesign;
-                        isValid = false;
-                    }
-                });
-            }
-
-            // Cash donation
-            if (DOM.donationType.value === 'cash' && (parseFloat(DOM.cashDonationAmount.value) || 0) <= 0) {
-                DOM.cashDonationAmount.style.borderColor = '#ff5722';
-                if (!firstErrorElement) firstErrorElement = DOM.cashDonationAmount;
-                isValid = false;
-            }
-            
-            // Raffle tickets
-            if (cart.raffleTickets && cart.raffleTickets.entries && cart.raffleTickets.entries.length > 0) {
-                const raffleNames = document.querySelectorAll('.raffle-name-input');
-                const raffleContacts = document.querySelectorAll('.raffle-contact-input');
+                <div style="background: rgba(139,195,74,0.05); border: 1px solid rgba(139,195,74,0.2); border-radius: 10px; padding: 15px; margin: 15px 0;">
+                    <label style="display: flex; cursor: pointer;">
+                        <input type="checkbox" id="coverFeesCheckbox" style="width: 20px; height: 20px; margin-right: 12px; accent-color: #8bc34a;" aria-label="Cover Processing Fee">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; font-size: 14px;">💳 Help us by covering the processing fee</div>
+                            <div id="feeAmount" style="color: #8bc34a; font-weight: 600; margin-top: 8px; font-size: 13px;" aria-live="polite"></div>
+                        </div>
+                    </label>
+                </div>
                 
-                raffleNames.forEach((nameField, index) => {
-                    const contactField = raffleContacts[index];
-                    
-                    if (nameField && nameField.value.trim() === '') {
-                        nameField.style.borderColor = '#ff5722';
-                        if (!firstErrorElement) firstErrorElement = nameField;
-                        isValid = false;
-                    }
-                    if (contactField && contactField.value.trim() === '') {
-                        contactField.style.borderColor = '#ff5722';
-                        if (!firstErrorElement) firstErrorElement = contactField;
-                        isValid = false;
-                    }
-                });
-            }
+                <div class="cart-total-row final"><span>Total:</span><span id="total" aria-live="polite">$0.00</span></div>
+            </div>
+            <button type="button" class="btn btn-primary" id="checkoutBtn" disabled aria-label="Proceed to Checkout">Proceed to Checkout</button>
+        </div>
+    </div>
 
-            if (!isValid && firstErrorElement) {
-                firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-
-            return isValid;
-        }
-
-        function validatePhone(phone) {
-            const re = /^\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/;
-
-
-        // --- HORSE LOGIC ---
-
-        function generateHorseEntryHTML(index) {
-            return `
-                <div class="horse-entry">
-                    <div class="info-box"><p>🏇 Horse #${index + 1}</p></div>
-                    <div class="form-group">
-                        <label class="form-label">Horse Name<span class="required">*</span></label>
-                        <input type="text" class="form-input horse-name-input" id="horse-name-${index}" placeholder="e.g., Irish Charger">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Owner Name (for Announcement)<span class="required">*</span></label>
-                        <input type="text" class="form-input owner-name-input" id="owner-name-${index}" placeholder="e.g., The Murphy Family">
-                    </div>
-                </div>
-            `;
-        }
-        
-        function updateHorseFields() {
-            const qty = cart.horses.quantity;
-            let html = '';
-            cart.horses.entries = []; // Reset entries
-
-            for (let i = 0; i < qty; i++) {
-                html += generateHorseEntryHTML(i);
-                // Create placeholders for data submission
-                cart.horses.entries.push({ number: i + 1, name: '', owner: '' });
-            }
-            DOM.horseEntriesContainer.innerHTML = html;
-        }
-
-        DOM.horseSponsorshipCheck.addEventListener('change', function() {
-            DOM.horseSponsorshipFields.classList.toggle('visible', this.checked);
-            if (!this.checked) { 
-                DOM.horseQuantity.value = '';
-                cart.horses = { quantity: 0, totalPrice: 0, entries: [] }; 
-            }
-            updateCart();
-        });
-
-        DOM.horseQuantity.addEventListener('change', function() {
-            const qty = parseInt(this.value) || 0;
-            cart.horses.quantity = qty;
-            cart.horses.totalPrice = qty * PRICES.HORSE;
-            updateHorseFields();
-            updateCart();
-        });
-
-        // Event listener for all dynamically added horse name/owner fields
-        DOM.horseEntriesContainer.addEventListener('input', function(e) {
-            if (e.target.classList.contains('horse-name-input') || e.target.classList.contains('owner-name-input')) {
-                // Find the index from the element's ID (e.g., horse-name-0 -> 0)
-                const index = parseInt(e.target.id.split('-').pop());
-                const horseEntry = cart.horses.entries[index];
-
-                if (horseEntry) {
-                    if (e.target.classList.contains('horse-name-input')) {
-                        horseEntry.name = e.target.value.trim();
-                    } else if (e.target.classList.contains('owner-name-input')) {
-                        horseEntry.owner = e.target.value.trim();
-                    }
-                }
-            }
-        });
-
-
-        // --- PROGRAM AD LOGIC ---
-        let adCount = 0;
-
-        function getAdPriceAndLabel(value) {
-            switch (value) {
-                case 'business-card-25': return { price: PRICES.AD_BUSINESS_CARD, sizeLabel: 'Business Card (¼ page)' };
-                case 'quarter-25': return { price: PRICES.AD_QUARTER, sizeLabel: '¼ Page' };
-                case 'half-50': return { price: PRICES.AD_HALF, sizeLabel: '½ Page' };
-                case 'full-100': return { price: PRICES.AD_FULL, sizeLabel: 'Full Page' };
-                case 'full-sponsored-120': return { price: PRICES.AD_FULL_SPONSORED, sizeLabel: 'Full Page + Sponsored Race' };
-                default: return { price: 0, sizeLabel: '' };
-            }
-        }
-
-        function generateAdHTML(index) {
-            return `
-                <div class="ad-container" id="ad-container-${index}" data-ad-index="${index}">
-                    ${index > 0 ? `<span class="remove-btn" onclick="removeAd(${index})">Remove Ad #${index + 1}</span>` : ''}
-                    <div class="info-box"><p>📖 **Ad #${index + 1}**</p></div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Ad Size & Price<span class="required">*</span></label>
-                        <select class="form-select ad-size-select" data-index="${index}">
-                            <option value="">Select Size</option>
-                            <option value="business-card-25">$25 - Business Card (¼ page)</option>
-                            <option value="quarter-25">$25 - ¼ Page</option>
-                            <option value="half-50">$50 - ½ Page</option>
-                            <option value="full-100">$100 - Full Page</option>
-                            <option value="full-sponsored-120">$120 - Full Page + Sponsored Race</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Business / Purchaser Name<span class="required">*</span></label>
-                        <input type="text" class="form-input ad-business-name" data-index="${index}" placeholder="Name for Program Book">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Ad Design Option<span class="required">*</span></label>
-                        <select class="form-select ad-design-option" data-index="${index}">
-                            <option value="">Select Option</option>
-                            <option value="upload">I'll Design & Upload My Own Ad</option>
-                            <option value="create">Please Create an Ad for Me</option>
-                        </select>
-                    </div>
-                    
-                    <div class="ad-upload-field" data-index="${index}" style="display:none;">
-                        <div class="info-box"><p>Upload your PDF, JPG, or PNG file here.</p></div>
-                        <div class="form-group">
-                            <label class="form-label">Upload Graphic</label>
-                            <input type="file" class="form-input ad-file-upload" data-index="${index}" accept=".pdf,.jpg,.jpeg,.png">
-                        </div>
-                    </div>
-
-                    <div class="ad-create-field" data-index="${index}" style="display:none;">
-                        <div class="form-group">
-                            <label class="form-label">Ad Content / Instructions</label>
-                            <textarea class="form-input ad-content-instructions" data-index="${index}" placeholder="e.g., Use logo attached and text: 'Proud Sponsor of the BC Dancers!'"></textarea>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function addAd() {
-            if (cart.programAds.length >= 5) return; // Max 5 ads
-
-            const index = cart.programAds.length;
-            cart.programAds.push({ 
-                adNumber: index + 1, price: 0, sizeLabel: '', businessName: '', designOption: '', 
-                file: null, instructions: ''
-            });
-
-            DOM.adsContainer.insertAdjacentHTML('beforeend', generateAdHTML(index));
-
-            // Show/Hide 'Add Another Ad' button
-            DOM.addAdBtn.style.display = cart.programAds.length < 5 ? 'block' : 'none';
-        }
-
-        function removeAd(index) {
-            cart.programAds.splice(index, 1);
-            const adElement = document.getElementById(`ad-container-${index}`);
-            if (adElement) adElement.remove();
-
-            // Re-index remaining ads in the cart and DOM
-            cart.programAds.forEach((ad, i) => {
-                ad.adNumber = i + 1;
-                const container = document.getElementById(`ad-container-${ad.adIndex}`);
-                if (container) container.id = `ad-container-${i}`;
-                ad.adIndex = i;
-            });
-            adCount = cart.programAds.length;
-
-            DOM.addAdBtn.style.display = cart.programAds.length < 5 ? 'block' : 'none';
-            updateCart();
-        }
-
-        DOM.programAdCheck.addEventListener('change', function() {
-            DOM.programAdFields.classList.toggle('visible', this.checked);
-            if (this.checked && cart.programAds.length === 0) {
-                addAd();
-            } else if (!this.checked) {
-                DOM.adsContainer.innerHTML = '';
-                cart.programAds = [];
-                DOM.addAdBtn.style.display = 'none';
-            }
-            updateCart();
-        });
-
-        DOM.addAdBtn.addEventListener('click', addAd);
-
-        // Event listener for all dynamically added ad fields
-        DOM.programAdFields.addEventListener('change', function(e) {
-            const target = e.target;
-            const index = parseInt(target.getAttribute('data-index'));
-            const ad = cart.programAds[index];
-            if (!ad) return;
-
-            if (target.classList.contains('ad-size-select')) {
-                const { price, sizeLabel } = getAdPriceAndLabel(target.value);
-                ad.price = price;
-                ad.sizeLabel = sizeLabel;
-                updateCart();
-            } else if (target.classList.contains('ad-design-option')) {
-                ad.designOption = target.value;
-                const adContainer = document.getElementById(`ad-container-${index}`);
-                if (adContainer) {
-                    adContainer.querySelector('.ad-upload-field').style.display = (target.value === 'upload') ? 'block' : 'none';
-                    adContainer.querySelector('.ad-create-field').style.display = (target.value === 'create') ? 'block' : 'none';
-                }
-            } else if (target.classList.contains('ad-file-upload')) {
-                ad.file = target.files[0] || null;
-            }
-        });
-
-        DOM.programAdFields.addEventListener('input', function(e) {
-            const target = e.target;
-            const index = parseInt(target.getAttribute('data-index'));
-            const ad = cart.programAds[index];
-            if (!ad) return;
-
-            if (target.classList.contains('ad-business-name')) {
-                ad.businessName = target.value.trim();
-            } else if (target.classList.contains('ad-content-instructions')) {
-                ad.instructions = target.value.trim();
-            }
-        });
-
-
-        // --- RAFFLE TICKET LOGIC ---
-          // --- FIXED RAFFLE TICKET LOGIC ---
-
-          function updateRaffleFields() {
-              const type = DOM.raffleType.value;
-              const isIndividual = type === 'individual';
-              const isBook = type === 'book';
-              
-              // Toggle visibility of the correct input sections
-              DOM.raffleIndividualOptions.style.display = isIndividual ? 'block' : 'none';
-              DOM.raffleBookOptions.style.display = isBook ? 'block' : 'none';
-          
-              // Ensure the cart object is initialized before use
-              if (!cart.raffleTickets) {
-                  cart.raffleTickets = { 
-                      type: '', 
-                      individualTickets: 0, 
-                      books: 0, 
-                      totalQuantity: 0, 
-                      totalPrice: 0, 
-                      entries: [] 
-                  };
-              }
-          
-              // Get selected quantity
-              const qty = isIndividual 
-                  ? (parseInt(DOM.raffleQuantityIndividual.value) || 0) 
-                  : isBook 
-                  ? (parseInt(DOM.raffleQuantityBook.value) || 0) 
-                  : 0;
-          
-              let totalEntries = 0;
-              let totalTickets = 0;
-              let html = '';
-              
-              // Reset entries array (now safe)
-              cart.raffleTickets.entries = []; 
-              
-              if (isIndividual) {
-                  totalEntries = qty;
-                  totalTickets = qty;
-              } else if (isBook) {
-                  totalEntries = qty;
-                  totalTickets = qty * 5;
-              }
-          
-              // Generate dynamic fields for name/contact
-              for (let i = 0; i < totalEntries; i++) {
-                  const ticketsPerEntry = isBook ? 5 : 1;
-                  const entryLabel = isBook ? `Book #${i + 1} (${ticketsPerEntry} Tickets)` : `Ticket #${i + 1}`;
-                  
-                  html += `
-                      <div class="horse-entry">
-                          <div class="info-box"><p>🎫 ${entryLabel}</p></div>
-                          <div class="form-group">
-                              <label class="form-label">Owner's Full Name<span class="required">*</span></label>
-                              <input type="text" class="form-input raffle-name-input" id="raffle-name-${i}" placeholder="Name for Ticket(s)">
-                          </div>
-                          <div class="form-group">
-                              <label class="form-label">Owner's Contact (Email/Phone)<span class="required">*</span></label>
-                              <input type="text" class="form-input raffle-contact-input" id="raffle-contact-${i}" placeholder="Email or Phone">
-                          </div>
-                      </div>
-                  `;
-                  // Store entry structure
-                  cart.raffleTickets.entries.push({ 
-                      number: i + 1, name: '', contact: '', 
-                      tickets: ticketsPerEntry
-                  });
-              }
-          
-              DOM.raffleEntriesContainer.innerHTML = html;
-              
-              // Update cart object with final values
-              cart.raffleTickets.type = type;
-              cart.raffleTickets.individualTickets = isIndividual ? qty : 0;
-              cart.raffleTickets.books = isBook ? qty : 0;
-              cart.raffleTickets.totalQuantity = totalTickets;
-              cart.raffleTickets.totalPrice = (isIndividual ? qty * PRICES.RAFFLE_INDIVIDUAL : isBook ? qty * PRICES.RAFFLE_BOOK : 0);
-              
-              // ⚠️ CRITICAL FIX: DO NOT CALL updateCart() HERE
-              // This was causing infinite recursion because updateCart() calls updateRaffleFields()
-              // The cart will be updated by the event listener that triggered this function
-          }
-          
-          // Event Listeners for Raffle Tickets
-          DOM.raffleTicketsCheck.addEventListener('change', function() {
-              DOM.raffleTicketsFields.classList.toggle('visible', this.checked);
-              if (!this.checked) { 
-                  DOM.raffleType.value = '';
-                  DOM.raffleQuantityIndividual.value = '';
-                  DOM.raffleQuantityBook.value = '';
-                  cart.raffleTickets = null; 
-                  updateCart(); // Update cart when unchecking
-              } else {
-                  cart.raffleTickets = { 
-                      type: '', individualTickets: 0, books: 0, 
-                      totalQuantity: 0, totalPrice: 0, entries: [] 
-                  };
-                  updateRaffleFields(); // Initialize fields
-                  updateCart(); // Update cart when checking
-              }
-          });
-          
-          DOM.raffleType.addEventListener('change', function() {
-              DOM.raffleQuantityIndividual.value = ''; // Clear other quantity
-              DOM.raffleQuantityBook.value = ''; // Clear other quantity
-              updateRaffleFields(); // Update fields based on type
-              updateCart(); // Update cart after fields change
-          });
-          
-          DOM.raffleQuantityIndividual.addEventListener('change', function() {
-              updateRaffleFields(); // Generate entry fields
-              updateCart(); // Update cart with new totals
-          });
-          
-          DOM.raffleQuantityBook.addEventListener('change', function() {
-              updateRaffleFields(); // Generate entry fields
-              updateCart(); // Update cart with new totals
-          });
-          
-          // Event listener for all dynamically added raffle name/contact fields
-          DOM.raffleEntriesContainer.addEventListener('input', function(e) {
-              if (e.target.classList.contains('raffle-name-input') || e.target.classList.contains('raffle-contact-input')) {
-                  const index = parseInt(e.target.id.split('-').pop());
-                  const entry = cart.raffleTickets.entries[index];
-          
-                  if (entry) {
-                      if (e.target.classList.contains('raffle-name-input')) {
-                          entry.name = e.target.value.trim();
-                      } else if (e.target.classList.contains('raffle-contact-input')) {
-                          entry.contact = e.target.value.trim();
-                      }
-                  }
-                  // No need to call updateCart() here - just storing data
-              }
-          });
-          
-          // --- END FIXED RAFFLE TICKET LOGIC ---
-  
-        // --- DONATION LOGIC ---
-
-        function updateDonationFields() {
-            const type = DOM.donationType.value;
-            DOM.giftBasketFields.style.display = (type === 'basket') ? 'block' : 'none';
-            DOM.cashDonationFields.style.display = (type === 'cash') ? 'block' : 'none';
-
-            if (type === 'basket') {
-                cart.donation = {
-                    type: 'basket',
-                    description: DOM.basketDescription.value.trim(),
-                    value: DOM.basketValue.value,
-                    valueLabel: DOM.basketValue.options[DOM.basketValue.selectedIndex].text,
-                    recognition: DOM.recognitionName.value.trim()
-                };
-                cart.cashDonation = null; // Clear cash donation if basket is selected
-                DOM.cashDonationAmount.value = '';
-            } else if (type === 'cash') {
-                const amount = parseFloat(DOM.cashDonationAmount.value) || 0;
-                cart.cashDonation = {
-                    amount: amount,
-                    purpose: DOM.cashPurpose.value,
-                    recognition: DOM.recognitionName.value.trim()
-                };
-                cart.donation = null; // Clear basket donation if cash is selected
-                DOM.basketDescription.value = '';
-                DOM.basketValue.value = '';
-            } else {
-                cart.donation = null;
-                cart.cashDonation = null;
-            }
-            updateCart();
-        }
-
-        DOM.basketDonationCheck.addEventListener('change', function() {
-            DOM.basketDonationFields.classList.toggle('visible', this.checked);
-            if (!this.checked) { 
-                DOM.donationType.value = '';
-                DOM.giftBasketFields.style.display = 'none';
-                DOM.cashDonationFields.style.display = 'none';
-                cart.donation = null;
-                cart.cashDonation = null;
-            }
-            updateDonationFields();
-        });
-
-        DOM.donationType.addEventListener('change', updateDonationFields);
-        DOM.cashDonationAmount.addEventListener('input', updateDonationFields);
-        DOM.basketDescription.addEventListener('input', updateDonationFields);
-        DOM.basketValue.addEventListener('change', updateDonationFields);
-        DOM.cashPurpose.addEventListener('change', updateDonationFields);
-        DOM.recognitionName.addEventListener('input', updateDonationFields);
-
-
-        // --- EVENT TICKET LOGIC ---
-        
-        DOM.eventTicketsCheck.addEventListener('change', function() {
-            DOM.eventTicketsFields.classList.toggle('visible', this.checked);
-            if (!this.checked) { 
-                DOM.ticketQuantity.value = '';
-                DOM.tableName.value = '';
-                DOM.tableReservationField.style.display = 'none';
-                cart.eventTickets = null; 
-            }
-            updateCart();
-        });
-
-        DOM.ticketQuantity.addEventListener('change', function() {
-            const qty = parseInt(this.value) || 0;
-            cart.eventTickets = qty > 0 ? { quantity: qty, price: PRICES.TICKET, total: qty * PRICES.TICKET, tableName: DOM.tableName.value.trim() } : null;
-            
-            // Conditional Table Reservation Field
-            DOM.tableReservationField.style.display = (qty >= 8) ? 'block' : 'none';
-            if (qty < 8) DOM.tableName.value = ''; // Clear if requirement is gone
-
-            updateCart();
-        });
-        
-        DOM.tableName.addEventListener('input', function() {
-            if (cart.eventTickets) {
-                cart.eventTickets.tableName = this.value.trim();
-            }
-        });
-
-        // --- FINAL CHECKOUT BINDING ---
-
-// Remove validation popups - only show errors on checkout
-[DOM.firstName, DOM.lastName, DOM.email, DOM.phone, DOM.dancerFamily].forEach(field => {
-    field.addEventListener('input', () => {
-        // Just remove error styling when typing
-        field.style.borderColor = '';
-    });
-});
-
-DOM.coverFeesCheckbox.addEventListener('change', function() {
-    const subtotal = parseFloat(DOM.subtotalDisplay.textContent.replace('$', '')) || 0;
-    updateTotal(subtotal);
-});
-
-// CHECKOUT BUTTON HANDLER
-DOM.checkoutBtn.addEventListener('click', async function() {
-    // Validate form - only shows alerts if invalid
-    if (!validateForm()) {
-        // Using a simple alert, since you were using it previously.
-        alert('❌ Please fill in all required fields before proceeding.');
-        return;
-    }
-
-    // Collect essential purchaser and totals data
-    const purchaserInfo = {
-        firstName: DOM.firstName.value.trim(),
-        lastName: DOM.lastName.value.trim(),
-        email: DOM.email.value.trim(),
-        phone: DOM.phone.value.trim(),
-        dancerFamily: DOM.dancerFamily.value,
-        subtotal: parseFloat(DOM.subtotalDisplay.textContent.replace('$', '')),
-        total: parseFloat(DOM.totalDisplay.textContent.replace('$', '')),
-        coverFees: DOM.coverFeesCheckbox.checked,
-    };
-    
-    const purchaseData = {
-        purchaser: purchaserInfo,
-        cart: cart,
-        totals: {
-            subtotal: purchaserInfo.subtotal,
-            coveringFees: purchaserInfo.coverFees,
-            processingFee: purchaserInfo.coverFees ? ((purchaserInfo.subtotal * PRICES.FEE_PERCENT) + PRICES.FEE_FLAT) : 0,
-            finalTotal: purchaserInfo.total
-        }
-    };
-
-    console.log('✅ Validation passed - Creating Stripe checkout');
-    console.log('📦 Purchase data:', purchaseData);
-
-    // Disable button and show loading
-    const btn = this;
-    btn.disabled = true;
-    btn.textContent = 'Processing...';
-
-    try {
-        // --- FIX FOR METADATA OVERFLOW ---
-        // Create a small, summary version of the cart for Stripe metadata
-        // This ensures the total metadata size stays under the 500-character limit.
-        const summaryCart = {
-            tickets: cart.eventTickets?.quantity || 0,
-            horses: cart.horses?.quantity || 0,
-            ads: cart.programAds.length,
-            raffles: cart.raffleTickets?.totalQuantity || 0,
-            donation: cart.cashDonation?.amount || 0,
-            total: purchaseData.totals.finalTotal,
-            family: purchaseData.purchaser.dancerFamily
-        };
-        
-        // Update the purchaseData object to only include the summary cart for metadata purposes
-        // NOTE: The full 'cart' object is still sent to the Netlify function, where it can be saved/logged.
-        purchaseData.metadataSummary = JSON.stringify(summaryCart);
-        // --- END METADATA FIX ---
-
-
-        // Send data to Netlify function
-        console.log('🌐 Calling Netlify function...');
-        const response = await fetch('/api/create-checkout', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(purchaseData)
-        });
-
-        console.log('📡 Response status:', response.status);
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('❌ Server error:', errorText);
-            throw new Error(`Server returned ${response.status}: ${errorText}`);
-        }
-
-        const result = await response.json();
-        console.log('✅ Result:', result);
-
-        if (result.url) {
-            console.log('🚀 Redirecting to Stripe...');
-            window.location.href = result.url;
-        } else {
-            throw new Error(result.error || 'No checkout URL returned');
-        }
-
-    } catch (error) {
-        console.error('❌ Checkout error:', error);
-        
-        let errorMessage = '❌ Checkout Error\n\n';
-        
-        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-            errorMessage += 'Cannot connect to server.\n\n';
-            errorMessage += 'Possible causes:\n';
-            errorMessage += '✗ Netlify function not deployed\n';
-            errorMessage += '✗ Function path incorrect\n';
-            errorMessage += '✗ Internet connection issue\n\n';
-            errorMessage += 'Check browser console (F12) for details.';
-        } else if (error.message.includes('404')) {
-            errorMessage += 'Payment function not found.\n\n';
-            errorMessage += 'The Netlify function may not be deployed yet.\n';
-            errorMessage += 'Make sure you:\n';
-            errorMessage += '1. Created netlify/functions/create-checkout.js\n';
-            errorMessage += '2. Pushed to GitHub\n';
-            errorMessage += '3. Netlify finished deploying\n\n';
-            errorMessage += 'Check Netlify deploy logs.';
-        } else {
-            errorMessage += error.message;
-            errorMessage += '\n\nCheck console for more details.';
-        }
-        
-        alert(errorMessage);
-        btn.disabled = false;
-        btn.textContent = 'Proceed to Checkout';
-    }
-});
-
-// Initial update
-updateCart();
-    </script>
+    <!-- JavaScript - Loads after HTML, executes when DOM ready -->
+    <script src="script.js" defer></script>
 </body>
 </html>
