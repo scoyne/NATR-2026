@@ -1,3 +1,9 @@
+module.exports = async function handler(req, res) {
+  console.log('🔔 WEBHOOK CALLED!', req.method);
+  console.log('Headers:', req.headers);
+  
+  // ... rest of your code
+
 // api/stripe-webhook.js
 // Receives payment confirmation from Stripe and saves to database
 
