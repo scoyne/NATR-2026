@@ -1,9 +1,16 @@
 // api/stripe-webhook.js
-// FIXED VERSION - Matches your Supabase schema
+// CRITICAL: Disable body parser for Stripe webhook verification
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { createClient } = require('@supabase/supabase-js');
 const crypto = require('crypto');
+
+// REQUIRED: Tell Vercel to give us raw body
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -49,17 +56,37 @@ async function buffer(readable) {
   return Buffer.concat(chunks);
 }
 
-module.exports = async function handler(req, res) {
-  console.log('🔔 Webhook received:', req.method);
+// MAIN HANDLER
+export default async function handler(req, res) {
+  console.log('🔔 Webhook called:', req.method);
+  console.log('Headers:', JSON.stringify(req.headers, null, 2));
   
   if (req.method !== 'POST') {
+    console.log('❌ Wrong method:', req.method);
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const buf = await buffer(req);
+  let buf;
+  try {
+    buf = await buffer(req);
+    console.log('📦 Received body, size:', buf.length);
+  } catch (err) {
+    console.error('❌ Failed to read body:', err);
+    return res.status(400).json({ error: 'Failed to read request body' });
+  }
+
   const sig = req.headers['stripe-signature'];
+  if (!sig) {
+    console.error('❌ No stripe-signature header');
+    return res.status(400).json({ error: 'No stripe signature' });
+  }
+
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  
+  if (!webhookSecret) {
+    console.error('❌ STRIPE_WEBHOOK_SECRET not configured');
+    return res.status(500).json({ error: 'Webhook secret not configured' });
+  }
+
   let event;
   try {
     event = stripe.webhooks.constructEvent(buf, sig, webhookSecret);
@@ -84,8 +111,12 @@ module.exports = async function handler(req, res) {
       if (fullSession.payment_intent && fullSession.payment_intent.charges?.data?.[0]) {
         const charge = fullSession.payment_intent.charges.data[0];
         if (charge.balance_transaction) {
-          const balanceTx = await stripe.balanceTransactions.retrieve(charge.balance_transaction);
-          stripeFeeActual = (balanceTx.fee || 0) / 100;
+          try {
+            const balanceTx = await stripe.balanceTransactions.retrieve(charge.balance_transaction);
+            stripeFeeActual = (balanceTx.fee || 0) / 100;
+          } catch (feeErr) {
+            console.warn('⚠️ Could not get balance transaction:', feeErr.message);
+          }
         }
       }
 
@@ -94,7 +125,7 @@ module.exports = async function handler(req, res) {
       const purchaserName = metadata.purchaserName || '';
       const [firstName, ...lastNameParts] = purchaserName.split(' ');
       const lastName = lastNameParts.join(' ') || '';
-      const email = fullSession.customer_details?.email || '';
+      const email = fullSession.customer_details?.email || fullSession.customer_email || '';
       const phone = metadata.phone || '';
       const dancerFamily = metadata.dancerFamily || '';
 
@@ -104,32 +135,33 @@ module.exports = async function handler(req, res) {
       const processingFeePaid = totalPaid - subtotal;
 
       console.log('💾 Creating order in database...');
+      console.log('Customer:', email, '| Total:', totalPaid);
 
-      // INSERT ORDER - FIXED to match your schema
+      // INSERT ORDER
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert({
           stripe_session_id: session.id,
           stripe_payment_intent_id: fullSession.payment_intent?.id || null,
-          purchaser_first_name: firstName,
-          purchaser_last_name: lastName,
+          purchaser_first_name: firstName || 'Unknown',
+          purchaser_last_name: lastName || 'Customer',
           purchaser_email: email,
           purchaser_phone: phone,
           dancer_family: dancerFamily,
-          order_date: new Date().toISOString(), // Added this
+          order_date: new Date().toISOString(),
           subtotal: subtotal,
           processing_fee: processingFeePaid,
           total_paid: totalPaid,
           covered_fees: processingFeePaid > 0,
           payment_status: 'completed',
           created_at: new Date().toISOString()
-          // Removed stripe_fee_actual - add column first if needed
         })
         .select()
         .single();
 
       if (orderError) {
         console.error('❌ Order creation failed:', orderError);
+        console.error('Error details:', JSON.stringify(orderError, null, 2));
         throw orderError;
       }
       
@@ -153,13 +185,14 @@ module.exports = async function handler(req, res) {
 
       // Process line items
       const lineItems = fullSession.line_items?.data || [];
+      console.log(`📦 Processing ${lineItems.length} line items...`);
       
       for (const item of lineItems) {
         const description = item.description || '';
         const quantity = item.quantity || 1;
         const amount = (item.amount_total || 0) / 100;
         
-        console.log(`📦 Processing: ${description} (qty: ${quantity})`);
+        console.log(`  → ${description} (qty: ${quantity})`);
 
         // EVENT TICKETS
         if (description.includes('tickets for Night at the Races')) {
@@ -175,14 +208,14 @@ module.exports = async function handler(req, res) {
             });
           
           if (ticketError) {
-            console.error('❌ Event tickets error:', ticketError);
+            console.error('    ❌ Event tickets error:', ticketError);
           } else {
-            console.log('✅ Event tickets saved');
+            console.log('    ✅ Event tickets saved');
           }
         }
 
         // HORSES
-        if (description.toLowerCase().includes('horse sponsorships')) {
+        else if (description.toLowerCase().includes('horse sponsorships')) {
           const horseInserts = [];
           
           if (horses.length > 0) {
@@ -200,7 +233,7 @@ module.exports = async function handler(req, res) {
               horseInserts.push({
                 order_id: orderId,
                 horse_name: `Horse ${i + 1}`,
-                owner_name: purchaserName,
+                owner_name: purchaserName || 'Owner',
                 price: 25,
                 created_at: new Date().toISOString()
               });
@@ -212,14 +245,14 @@ module.exports = async function handler(req, res) {
             .insert(horseInserts);
           
           if (horseError) {
-            console.error('❌ Horses error:', horseError);
+            console.error('    ❌ Horses error:', horseError);
           } else {
-            console.log(`✅ ${horseInserts.length} horses saved`);
+            console.log(`    ✅ ${horseInserts.length} horses saved`);
           }
         }
 
         // PROGRAM ADS
-        if (description.includes('Program Book Ad')) {
+        else if (description.includes('Program Book Ad')) {
           const adSize = description.split(' - ')[1]?.split('\n')[0] || 'Unknown';
           const businessMatch = description.match(/Business: (.+)/);
           const businessName = businessMatch ? businessMatch[1] : 'Business';
@@ -236,18 +269,18 @@ module.exports = async function handler(req, res) {
             });
           
           if (adError) {
-            console.error('❌ Program ad error:', adError);
+            console.error('    ❌ Program ad error:', adError);
           } else {
-            console.log('✅ Program ad saved');
+            console.log('    ✅ Program ad saved');
           }
         }
 
         // RAFFLE TICKETS
-        if (description.includes('Raffle Tickets')) {
+        else if (description.includes('Raffle Tickets')) {
           const isBook = description.includes('books');
           const totalTickets = isBook ? quantity * 5 : quantity;
           
-          console.log(`🎫 Generating ${totalTickets} raffle numbers...`);
+          console.log(`    🎫 Generating ${totalTickets} raffle numbers...`);
           const raffleNumbers = await generateUniqueRaffleNumbers(totalTickets);
           const raffleInserts = [];
 
@@ -261,7 +294,7 @@ module.exports = async function handler(req, res) {
                 raffleInserts.push({
                   order_id: orderId,
                   ticket_number: raffleNumbers[ticketIndex++],
-                  owner_name: owner.name || purchaserName,
+                  owner_name: owner.name || purchaserName || 'Owner',
                   owner_contact: owner.contact || email,
                   ticket_type: isBook ? 'book' : 'individual',
                   book_id: bookId,
@@ -275,7 +308,7 @@ module.exports = async function handler(req, res) {
               raffleInserts.push({
                 order_id: orderId,
                 ticket_number: raffleNumbers[i],
-                owner_name: purchaserName,
+                owner_name: purchaserName || 'Owner',
                 owner_contact: email,
                 ticket_type: isBook ? 'book' : 'individual',
                 book_id: bookId,
@@ -289,14 +322,14 @@ module.exports = async function handler(req, res) {
             .insert(raffleInserts);
           
           if (raffleError) {
-            console.error('❌ Raffle tickets error:', raffleError);
+            console.error('    ❌ Raffle tickets error:', raffleError);
           } else {
-            console.log(`✅ ${raffleInserts.length} raffle tickets saved`);
+            console.log(`    ✅ ${raffleInserts.length} raffle tickets saved`);
           }
         }
 
         // DONATIONS
-        if (description.includes('Cash Donation')) {
+        else if (description.includes('Cash Donation')) {
           const { error: donationError } = await supabase
             .from('donations')
             .insert({
@@ -308,15 +341,19 @@ module.exports = async function handler(req, res) {
             });
           
           if (donationError) {
-            console.error('❌ Donation error:', donationError);
+            console.error('    ❌ Donation error:', donationError);
           } else {
-            console.log('✅ Donation saved');
+            console.log('    ✅ Donation saved');
           }
+        }
+
+        // PROCESSING FEE (skip - already included in totals)
+        else if (description.includes('Processing Fee')) {
+          console.log('    ℹ️ Processing fee (already tracked)');
         }
       }
 
       console.log('🎉 Order processing complete!');
-      console.log(`💰 Stripe fee difference: $${(stripeFeeActual - processingFeePaid).toFixed(2)}`);
       
       return res.status(200).json({ 
         received: true, 
@@ -333,5 +370,7 @@ module.exports = async function handler(req, res) {
     }
   }
 
+  // For other event types
+  console.log('ℹ️ Received event type:', event.type);
   return res.status(200).json({ received: true });
-};
+}
